@@ -31,13 +31,15 @@
     position: absolute;
     bottom: 20px;
     font-size: 60px;
-    z-index: 50; /* 👈 修正: アイテムより手前に表示させる */
+    z-index: 50;
+    /* 👈 修正: 牛の初期位置をCSSで中央に設定し、表示を保証 */
+    left: calc(50% - 30px); 
   }
 
   .item {
     position: absolute;
     font-size: 40px;
-    z-index: 10; /* アイテムは牛より奥に */
+    z-index: 10;
   }
 
   #overlay {
@@ -100,15 +102,8 @@ window.onload = function() {
     // ゲームオーバー画面を非表示
     overlay.style.display = 'none';
 
-    // 🐄 初期位置の設定を、要素のレンダリングを待って確実に行う
-    setTimeout(() => {
-        // cow.offsetWidth を確実に取得し、初期位置を設定
-        cowX = window.innerWidth / 2 - (cow.offsetWidth / 2);
-        cow.style.left = cowX + "px"; 
-        
-        // アイテム生成タイマーの開始
-        spawner = setInterval(createItem, spawnInterval); 
-    }, 100); // 100ms待つ
+    // 🐄 初期位置はCSSで設定済みのため、ここではタイマーを即座に開始
+    spawner = setInterval(createItem, spawnInterval); 
 };
 
 // ======================================================
