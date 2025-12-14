@@ -6,183 +6,214 @@
 <title>もぐもぐ牛</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #e6f2e6;
-    font-family: sans-serif;
-    user-select: none;
-  }
+  body {
+    margin: 0;
+    background: #e6f2e6;
+    font-family: sans-serif;
+    user-select: none;
+  }
 
-  #game {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    touch-action: none; /* 👈 修正2: スマホのピンチズーム・スクロールを無効化 */
-  }
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /* 修正: スマホでのピンチズームやスクロールを無効化 */
+    touch-action: none; 
+  }
 
-  #score {
-    font-size: 26px;
-    padding: 12px;
-    text-align: center;
-  }
+  #score {
+    font-size: 26px;
+    padding: 12px;
+    text-align: center;
+  }
 
-  #cow {
-    position: absolute;
-    bottom: 20px;
-    font-size: 60px;
-    /* left: 45%; はJSで設定するため削除 */
-  }
+  #cow {
+    position: absolute;
+    bottom: 20px;
+    font-size: 60px;
+  }
 
-  .item {
-    position: absolute;
-    font-size: 40px;
-  }
+  .item {
+    position: absolute;
+    font-size: 40px;
+  }
 
-  #overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    font-size: 26px;
-    text-align: center;
-  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    /* JSで初期化時に非表示にするため、ここでは強制的に隠しません */
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 26px;
+    text-align: center;
+    z-index: 100; /* 他の要素より手前に表示 */
+  }
 
-  #overlay button {
-    margin-top: 20px;
-    font-size: 22px;
-    padding: 12px 24px;
-  }
+  #overlay button {
+    margin-top: 20px;
+    font-size: 22px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
 </style>
 </head>
 
 <body>
 <div id="game">
-  <div id="score">スコア：0</div>
-  <div id="cow">🐄</div>
+  <div id="score">スコア：0</div>
+  <div id="cow">🐄</div>
 
-  <div id="overlay">
-    <div id="finalText"></div>
-    <button onclick="restart()">もう一回</button>
-  </div>
+  <div id="overlay">
+    <div id="finalText"></div>
+    <button onclick="restart()">もう一回</button>
+  </div>
 </div>
 
 <script>
+// ======================================================
+// 1. DOM要素とグローバル変数の定義
+// ======================================================
 const cow = document.getElementById("cow");
 const scoreEl = document.getElementById("score");
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
+const gameArea = document.getElementById("game");
 
-// 👈 修正1-A: cowXの初期位置を牛の幅を使って正確に中央に設定
-let cowX = window.innerWidth / 2 - (cow.offsetWidth / 2);
-cow.style.left = cowX + "px"; 
-
+let cowX;
 let score = 0;
 let gameOver = false;
-
 let fallSpeed = 3;
 let spawnInterval = 1400;
+let spawner; // タイマー格納用変数
 
-// 👈 修正1-B: タップでタップ位置に移動
+// ======================================================
+// 2. 初期化処理 (ページ読み込み完了後に実行)
+//    → ゲーム開始と同時に終了するバグ対策
+// ======================================================
+window.onload = function() {
+    // 🐄 初期位置の設定（要素が完全にロードされた後に行う）
+    cowX = window.innerWidth / 2 - (cow.offsetWidth / 2);
+    cow.style.left = cowX + "px"; 
+
+    // ゲームオーバー画面を非表示にしてゲーム開始
+    overlay.style.display = 'none';
+
+    // アイテム生成タイマーの開始
+    spawner = setInterval(createItem, spawnInterval); 
+};
+
+// ======================================================
+// 3. イベントと関数定義
+// ======================================================
+
+// タップでタップ位置に移動（操作性改善）
 document.addEventListener("click", e => {
-  if (gameOver) return;
+  if (gameOver) return;
 
-  // タップした場所を牛の中央に設定 (牛の幅が60pxと仮定しなくてもoffsetWidthで取得)
-  let targetX = e.clientX - (cow.offsetWidth / 2); 
+  // タップしたX座標を牛の中央に設定
+  let targetX = e.clientX - (cow.offsetWidth / 2); 
 
-  // 画面の端からはみ出さないように制限
-  cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
-  cow.style.left = cowX + "px";
+  // 画面の端からはみ出さないように制限
+  cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
+  cow.style.left = cowX + "px";
 });
 
 // アイテム生成
 function createItem() {
-  if (gameOver) return;
+  if (gameOver) return;
 
-  const item = document.createElement("div");
-  item.className = "item";
+  const item = document.createElement("div");
+  item.className = "item";
 
-  const isGood = Math.random() < 0.75;
-  item.textContent = isGood ? "🌾" : "🗑️";
-  item.dataset.type = isGood ? "good" : "bad";
+  const isGood = Math.random() < 0.75;
+  item.textContent = isGood ? "🌾" : "🗑️";
+  item.dataset.type = isGood ? "good" : "bad";
 
-  item.style.left = Math.random() * (window.innerWidth - 40) + "px";
-  item.style.top = "0px";
+  // アイテムが牛の真上に落ちないようランダムな位置に配置
+  item.style.left = Math.random() * (window.innerWidth - 40) + "px";
+  item.style.top = "0px";
 
-  document.getElementById("game").appendChild(item);
+  gameArea.appendChild(item);
 
-  const fall = setInterval(() => {
-    item.style.top = item.offsetTop + fallSpeed + "px";
+  const fall = setInterval(() => {
+    // 落下処理
+    item.style.top = item.offsetTop + fallSpeed + "px";
 
-    const cowRect = cow.getBoundingClientRect();
-    const itemRect = item.getBoundingClientRect();
+    const cowRect = cow.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
 
-    // 当たり判定
-    if (
-      itemRect.bottom > cowRect.top &&
-      itemRect.left < cowRect.right &&
-      itemRect.right > cowRect.left
-    ) {
-      clearInterval(fall);
-      item.remove();
+    // 当たり判定 (牛とアイテムが接触しているか)
+    if (
+      itemRect.bottom > cowRect.top &&
+      itemRect.left < cowRect.right &&
+      itemRect.right > cowRect.left
+    ) {
+      clearInterval(fall);
+      item.remove();
 
-      if (item.dataset.type === "good") {
-        score += 10;
-        scoreEl.textContent = "スコア：" + score;
-        difficultyUp();
-      } else {
-        endGame();
-      }
-    }
+      if (item.dataset.type === "good") {
+        score += 10;
+        scoreEl.textContent = "スコア：" + score;
+        difficultyUp();
+      } else {
+        // 🗑️ (バッドアイテム) を取ったらゲームオーバー
+        endGame();
+      }
+    }
 
-    if (item.offsetTop > window.innerHeight) {
-      clearInterval(fall);
-      item.remove();
-    }
-  }, 30);
+    // アイテムが画面下に落ちきったとき
+    if (item.offsetTop > window.innerHeight) {
+      clearInterval(fall);
+      item.remove();
+      // 良いアイテムを落とした場合はペナルティを与える（任意、今回はそのまま）
+    }
+  }, 30);
 }
 
-// 難易度アップ（ゆるやか）
+// 難易度アップ（落下速度と生成間隔に上限/下限を設定）
 function difficultyUp() {
-  if (score % 50 === 0) {
-    // 👈 修正3: 落下速度に上限を設定 (例: 15)
-    fallSpeed = Math.min(15, fallSpeed + 0.5); 
-    
-    // 👈 修正3: 生成間隔に下限を設定 (例: 300ms)
-    spawnInterval = Math.max(300, spawnInterval - 100); 
-    
-    resetSpawner();
-  }
+  if (score % 50 === 0) {
+    // 落下速度を増加（最大値: 15）
+    fallSpeed = Math.min(15, fallSpeed + 0.5); 
+    
+    // 生成間隔を短縮（最小値: 300ms）
+    spawnInterval = Math.max(300, spawnInterval - 100); 
+    
+    resetSpawner();
+  }
 }
-
-let spawner = setInterval(createItem, spawnInterval);
 
 function resetSpawner() {
-  clearInterval(spawner);
-  spawner = setInterval(createItem, spawnInterval);
+  clearInterval(spawner);
+  spawner = setInterval(createItem, spawnInterval);
 }
 
 // ゲーム終了
 function endGame() {
-  gameOver = true;
-  // すでに降っているアイテムのsetIntervalを止める処理を追加すると完璧ですが、
-  // このままでも問題ありません（新しいアイテム生成が止まれば）
-  clearInterval(spawner);
-  
-  overlay.style.display = "flex";
-  finalText.innerHTML = `
-    おつかれさまでした<br>
-    スコア：${score}
-  `;
+  gameOver = true;
+  clearInterval(spawner); // アイテム生成を停止
+  
+  // 画面上に残っているアイテムも削除 (オプション)
+  document.querySelectorAll('.item').forEach(el => el.remove());
+
+  overlay.style.display = "flex";
+  finalText.innerHTML = `
+    おつかれさまでした<br>
+    スコア：${score}
+  `;
 }
 
 // リスタート
 function restart() {
-  location.reload();
+  // ページを再読み込みしてリセット
+  location.reload();
 }
 </script>
 </body>
