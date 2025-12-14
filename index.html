@@ -18,7 +18,6 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    /* 修正: スマホでのピンチズームやスクロールを無効化 */
     touch-action: none; 
   }
 
@@ -32,11 +31,13 @@
     position: absolute;
     bottom: 20px;
     font-size: 60px;
+    z-index: 50; /* 👈 修正: アイテムより手前に表示させる */
   }
 
   .item {
     position: absolute;
     font-size: 40px;
+    z-index: 10; /* アイテムは牛より奥に */
   }
 
   #overlay {
@@ -44,14 +45,13 @@
     inset: 0;
     background: rgba(0,0,0,0.7);
     color: #fff;
-    /* JSで初期化時に非表示にするため、ここでは強制的に隠しません */
     display: none; 
     align-items: center;
     justify-content: center;
     flex-direction: column;
     font-size: 26px;
     text-align: center;
-    z-index: 100; /* 他の要素より手前に表示 */
+    z-index: 100;
   }
 
   #overlay button {
@@ -91,22 +91,24 @@ let score = 0;
 let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
-let spawner; // タイマー格納用変数
+let spawner; 
 
 // ======================================================
 // 2. 初期化処理 (ページ読み込み完了後に実行)
-//    → ゲーム開始と同時に終了するバグ対策
 // ======================================================
 window.onload = function() {
-    // 🐄 初期位置の設定（要素が完全にロードされた後に行う）
-    cowX = window.innerWidth / 2 - (cow.offsetWidth / 2);
-    cow.style.left = cowX + "px"; 
-
-    // ゲームオーバー画面を非表示にしてゲーム開始
+    // ゲームオーバー画面を非表示
     overlay.style.display = 'none';
 
-    // アイテム生成タイマーの開始
-    spawner = setInterval(createItem, spawnInterval); 
+    // 🐄 初期位置の設定を、要素のレンダリングを待って確実に行う
+    setTimeout(() => {
+        // cow.offsetWidth を確実に取得し、初期位置を設定
+        cowX = window.innerWidth / 2 - (cow.offsetWidth / 2);
+        cow.style.left = cowX + "px"; 
+        
+        // アイテム生成タイマーの開始
+        spawner = setInterval(createItem, spawnInterval); 
+    }, 100); // 100ms待つ
 };
 
 // ======================================================
@@ -136,7 +138,6 @@ function createItem() {
   item.textContent = isGood ? "🌾" : "🗑️";
   item.dataset.type = isGood ? "good" : "bad";
 
-  // アイテムが牛の真上に落ちないようランダムな位置に配置
   item.style.left = Math.random() * (window.innerWidth - 40) + "px";
   item.style.top = "0px";
 
@@ -172,7 +173,6 @@ function createItem() {
     if (item.offsetTop > window.innerHeight) {
       clearInterval(fall);
       item.remove();
-      // 良いアイテムを落とした場合はペナルティを与える（任意、今回はそのまま）
     }
   }, 30);
 }
@@ -180,12 +180,8 @@ function createItem() {
 // 難易度アップ（落下速度と生成間隔に上限/下限を設定）
 function difficultyUp() {
   if (score % 50 === 0) {
-    // 落下速度を増加（最大値: 15）
     fallSpeed = Math.min(15, fallSpeed + 0.5); 
-    
-    // 生成間隔を短縮（最小値: 300ms）
     spawnInterval = Math.max(300, spawnInterval - 100); 
-    
     resetSpawner();
   }
 }
@@ -198,9 +194,8 @@ function resetSpawner() {
 // ゲーム終了
 function endGame() {
   gameOver = true;
-  clearInterval(spawner); // アイテム生成を停止
+  clearInterval(spawner); 
   
-  // 画面上に残っているアイテムも削除 (オプション)
   document.querySelectorAll('.item').forEach(el => el.remove());
 
   overlay.style.display = "flex";
@@ -212,7 +207,6 @@ function endGame() {
 
 // リスタート
 function restart() {
-  // ページを再読み込みしてリセット
   location.reload();
 }
 </script>
