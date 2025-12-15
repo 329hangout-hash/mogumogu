@@ -31,7 +31,7 @@ body {
 #bestScore {
   font-size: 18px;
   color: #666;
-  padding: 0 12px 12px;
+  padding-bottom: 12px;
   text-align: center;
 }
 
@@ -40,13 +40,11 @@ body {
   position: absolute;
   top: 50px;
   right: 20px;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: bold;
   color: #ff4500;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
   z-index: 60;
   opacity: 0;
-  transition: opacity 0.3s;
 }
 
 /* 地面 */
@@ -60,21 +58,20 @@ body {
   z-index: 40;
 }
 
-/* 牛（90%サイズ） */
+/* 牛（地面に密着） */
 #cow {
   position: absolute;
-  bottom: 60px; /* ← 地面にぴったり */
+  bottom: 45px; /* ← ここが重要 */
   left: calc(50% - 45px);
   z-index: 50;
 }
 
 #cow img {
   width: 90px;
-  height: auto;
   display: block;
 }
 
-/* 落下アイテム */
+/* アイテム */
 .item {
   position: absolute;
   z-index: 10;
@@ -95,7 +92,6 @@ body {
   justify-content: center;
   flex-direction: column;
   font-size: 26px;
-  text-align: center;
   z-index: 100;
 }
 
@@ -103,8 +99,8 @@ body {
   margin-top: 20px;
   font-size: 22px;
   padding: 12px 24px;
-  border: none;
   border-radius: 8px;
+  border: none;
 }
 </style>
 </head>
@@ -135,7 +131,6 @@ const bestScoreEl = document.getElementById("bestScore");
 const comboDisplay = document.getElementById("comboDisplay");
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
-const gameArea = document.getElementById("game");
 
 let score = 0;
 let bestScore = 0;
@@ -155,15 +150,6 @@ window.onload = () => {
   spawner = setInterval(createItem, spawnInterval);
 };
 
-function showCombo() {
-  if (combo >= 2) {
-    comboDisplay.textContent = `${combo} COMBO!`;
-    comboDisplay.style.opacity = 1;
-  } else {
-    comboDisplay.style.opacity = 0;
-  }
-}
-
 document.addEventListener("click", e => {
   if (gameOver) return;
 
@@ -181,10 +167,10 @@ function createItem() {
   item.className = "item";
 
   const list = [
-    { img: "wheat.png", type: "good", size: 80 },
-    { img: "corn.png", type: "good", size: 80 },
-    { img: "wheat.png", type: "good", size: 80 },
-    { img: "onion.png", type: "bad", size: 90 }
+    { img: "wheat.png", type: "good", size: 70 },
+    { img: "corn.png", type: "good", size: 70 },
+    { img: "wheat.png", type: "good", size: 70 },
+    { img: "onion.png", type: "bad", size: 75 }
   ];
 
   const data = list[Math.floor(Math.random() * list.length)];
@@ -192,7 +178,7 @@ function createItem() {
   item.style.left = Math.random() * (window.innerWidth - data.size) + "px";
   item.style.top = "0px";
 
-  gameArea.appendChild(item);
+  document.getElementById("game").appendChild(item);
 
   const timer = setInterval(() => {
     item.style.top = item.offsetTop + fallSpeed + "px";
@@ -208,8 +194,8 @@ function createItem() {
         combo++;
         score += data.img === "corn.png" ? 20 : 10;
         scoreEl.textContent = "スコア：" + score;
-        showCombo();
-        levelUp();
+        comboDisplay.textContent = combo >= 2 ? `${combo} COMBO!` : "";
+        comboDisplay.style.opacity = combo >= 2 ? 1 : 0;
       } else {
         endGame();
       }
@@ -219,18 +205,9 @@ function createItem() {
       clearInterval(timer);
       item.remove();
       combo = 0;
-      showCombo();
+      comboDisplay.style.opacity = 0;
     }
   }, 30);
-}
-
-function levelUp() {
-  if (score % 50 === 0) {
-    fallSpeed += 0.5;
-    spawnInterval = Math.max(400, spawnInterval - 100);
-    clearInterval(spawner);
-    spawner = setInterval(createItem, spawnInterval);
-  }
 }
 
 function endGame() {
