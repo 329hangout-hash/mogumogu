@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>もぐもぐ牛 - イラスト版</title>
+<title>もぐもぐ牛 - 最終版</title>
 
 <style>
   body {
     margin: 0;
-    background: #e6f2e6;
+    background: #e6f2e6; 
     font-family: sans-serif;
     user-select: none;
   }
@@ -21,6 +21,7 @@
     touch-action: none; 
   }
 
+  /* ↓↓ スコア・ベストスコアのスタイル ↓↓ */
   #score {
     font-size: 26px;
     padding: 12px 12px 0; 
@@ -34,32 +35,60 @@
     text-align: center;
   }
 
+  /* ↓↓ コンボ表示のスタイル ↓↓ */
+  #comboDisplay {
+    position: absolute;
+    top: 50px;
+    right: 20px;
+    font-size: 36px;
+    font-weight: bold;
+    color: #ff4500; 
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    z-index: 60;
+    opacity: 0; 
+    transition: opacity 0.3s;
+  }
+  
+  /* ↓↓ 牛の移動エリア（地面イラスト対応） ↓↓ */
+  #ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100px; 
+    z-index: 40;
+    /* 地面イラスト（ground.png）を背景に設定 */
+    background: url('ground.png');
+    background-repeat: repeat-x; 
+    background-size: auto 100px; 
+    border-top: none; 
+  }
+
+  /* ↓↓ 牛のスタイル (修正箇所) ↓↓ */
   #cow {
     position: absolute;
-    bottom: 20px;
+    bottom: 60px; /* 👈 修正: 牛の位置を上に調整 */
     z-index: 50;
     left: calc(50% - 30px); 
-    /* 修正：絵文字のfont-sizeを削除 */
   }
 
   #cow img {
-    width: 60px; /* 牛の画像のサイズ */
+    width: 60px; 
     height: auto;
     display: block;
   }
   
+  /* ↓↓ アイテムのスタイル ↓↓ */
   .item {
     position: absolute;
     z-index: 10;
-    /* 修正：絵文字のfont-sizeを削除 */
   }
   
   .item img {
-    width: 40px; /* アイテムの画像のサイズ */
-    height: 40px;
     display: block;
+    height: auto;
   }
 
+  /* ↓↓ ゲームオーバー画面のスタイル ↓↓ */
   #overlay {
     position: absolute;
     inset: 0;
@@ -89,6 +118,9 @@
 <div id="game">
   <div id="score">スコア：0</div>
   <div id="bestScore">ベストスコア：0</div>
+  <div id="comboDisplay"></div>
+
+  <div id="ground"></div>
 
   <div id="cow"><img id="cow-img" src="cow_right.png" alt="牛"></div>
 
@@ -103,9 +135,10 @@
 // 1. DOM要素とグローバル変数の定義
 // ======================================================
 const cow = document.getElementById("cow");
-const cowImg = document.getElementById("cow-img"); // 👈 追加: 牛の画像要素
+const cowImg = document.getElementById("cow-img"); 
 const scoreEl = document.getElementById("score");
 const bestScoreEl = document.getElementById("bestScore"); 
+const comboDisplay = document.getElementById("comboDisplay"); 
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
@@ -113,19 +146,19 @@ const gameArea = document.getElementById("game");
 let cowX;
 let score = 0;
 let bestScore = 0; 
+let comboCount = 0; 
 let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
 let spawner; 
-let lastTapX = window.innerWidth / 2; // 👈 追加: 最後にタップしたX座標
+let lastTapX = window.innerWidth / 2; 
 
 // ======================================================
-// 2. 初期化処理 (ページ読み込み完了後に実行)
+// 2. 初期化処理
 // ======================================================
 window.onload = function() {
     overlay.style.display = 'none';
 
-    // 🏆 ベストスコアの読み込みと表示
     const storedScore = localStorage.getItem('bestScore');
     if (storedScore) {
         bestScore = parseInt(storedScore);
@@ -136,7 +169,21 @@ window.onload = function() {
 };
 
 // ======================================================
-// 3. イベントと関数定義
+// 3. コンボ表示関数
+// ======================================================
+
+function updateComboDisplay(count) {
+    if (count >= 2) {
+        comboDisplay.textContent = `${count} COMBO!`;
+        comboDisplay.style.opacity = 1; 
+    } else {
+        comboDisplay.style.opacity = 0; 
+    }
+}
+
+
+// ======================================================
+// 4. イベントとアイテム生成
 // ======================================================
 
 // タップでタップ位置に移動 
@@ -145,13 +192,12 @@ document.addEventListener("click", e => {
 
   let targetX = e.clientX - (cow.offsetWidth / 2); 
   
-  // ↓↓ 修正: 画像の向きを変えるロジックを追加 ↓↓
   if (e.clientX > lastTapX) {
-      cowImg.src = "cow_right.png"; // 右向きの画像
+      cowImg.src = "cow_right.png"; 
   } else if (e.clientX < lastTapX) {
-      cowImg.src = "cow_left.png"; // 左向きの画像
+      cowImg.src = "cow_left.png"; 
   }
-  lastTapX = e.clientX; // 最後のタップ位置を更新
+  lastTapX = e.clientX; 
   
   cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
   cow.style.left = cowX + "px";
@@ -164,24 +210,22 @@ function createItem() {
   const item = document.createElement("div");
   item.className = "item";
   
-  // ↓↓ 修正: アイテムを画像ファイル名に変更 ↓↓
   const items = [
-      { imgName: "wheat.png", type: "good" }, // 10点
-      { imgName: "wheat.png", type: "good" },
-      { imgName: "wheat.png", type: "good" },
-      { imgName: "corn.png", type: "good" },    // 20点（トウモロコシ）
-      { imgName: "onion.png", type: "bad" }     // ゲームオーバー（玉ねぎ）
+      { imgName: "wheat.png", type: "good", size: 90 },    
+      { imgName: "wheat.png", type: "good", size: 90 },
+      { imgName: "wheat.png", type: "good", size: 90 },
+      { imgName: "corn.png", type: "good", size: 90 },     
+      { imgName: "onion.png", type: "bad", size: 100 }     
   ];
 
   const randomIndex = Math.floor(Math.random() * items.length);
   const selectedItem = items[randomIndex];
 
-  // ↓↓ 修正: <img>タグを挿入し、画像ファイル名をデータとして保存 ↓↓
-  item.innerHTML = `<img src="${selectedItem.imgName}" alt="${selectedItem.type}">`;
+  item.innerHTML = `<img src="${selectedItem.imgName}" alt="${selectedItem.type}" style="width: ${selectedItem.size}px; height: ${selectedItem.size}px;">`;
   item.dataset.type = selectedItem.type; 
   item.dataset.imgName = selectedItem.imgName;
   
-  item.style.left = Math.random() * (window.innerWidth - 40) + "px";
+  item.style.left = Math.random() * (window.innerWidth - selectedItem.size) + "px";
   item.style.top = "0px";
 
   gameArea.appendChild(item);
@@ -193,7 +237,7 @@ function createItem() {
     const cowRect = cow.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
 
-    // 当たり判定の緩和版
+    // 当たり判定
     if (
       itemRect.bottom > cowRect.top + 10 && 
       itemRect.left < cowRect.right &&
@@ -206,12 +250,14 @@ function createItem() {
       if (item.dataset.type === "good") {
         let points = 0;
         
-        // ↓↓ 修正: トウモロコシは20点、麦は10点 ↓↓
         if (item.dataset.imgName === "corn.png") {
             points = 20; 
         } else {
             points = 10; 
         }
+        
+        comboCount += 1;
+        updateComboDisplay(comboCount);
 
         score += points;
         scoreEl.textContent = "スコア：" + score;
@@ -226,6 +272,12 @@ function createItem() {
     if (item.offsetTop > window.innerHeight) {
       clearInterval(fall);
       item.remove();
+      
+      // Goodアイテムを見逃した場合：コンボリセット
+      if (item.dataset.type === "good") {
+        comboCount = 0; 
+        updateComboDisplay(comboCount);
+      }
     }
   }, 30);
 }
@@ -251,12 +303,12 @@ function endGame() {
   
   document.querySelectorAll('.item').forEach(el => el.remove());
 
-  // ↓↓ 修正: ゲームオーバー時、牛を目を回した画像にする ↓↓
   cowImg.src = "cow_stun.png";
-  cowImg.style.width = '70px'; // 座った牛の画像を少し大きく表示する（任意）
-  cow.style.bottom = '15px'; // 座ったように少し位置を下げる（任意）
+  cowImg.style.width = '70px'; 
+  cow.style.bottom = '15px'; 
+  
+  comboDisplay.style.opacity = 0; 
 
-  // 🏆 ベストスコアの更新と保存
   if (score > bestScore) {
       bestScore = score;
       localStorage.setItem('bestScore', bestScore); 
@@ -267,7 +319,8 @@ function endGame() {
   finalText.innerHTML = `
     おつかれさまでした<br>
     スコア：${score}<br>
-    <span style="font-size: 80%;">ベストスコア：${bestScore}</span>
+    <span style="font-size: 80%;">ベストスコア：${bestScore}</span><br>
+    <span style="font-size: 80%; color: #ffd700;">最大コンボ：${comboCount}</span>
   `;
 }
 
