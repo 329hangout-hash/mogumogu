@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>もぐもぐ牛 v6</title>
+<title>もぐもぐ牛 v7</title>
 
 <style>
   body {
@@ -23,11 +23,10 @@
 
   #score {
     font-size: 26px;
-    padding: 12px 12px 0; /* ベストスコアとの間隔調整 */
+    padding: 12px 12px 0; 
     text-align: center;
   }
 
-  /* ↓↓ 追加: ベストスコアのスタイル ↓↓ */
   #bestScore {
     font-size: 18px;
     color: #666;
@@ -93,14 +92,14 @@
 // ======================================================
 const cow = document.getElementById("cow");
 const scoreEl = document.getElementById("score");
-const bestScoreEl = document.getElementById("bestScore"); // 👈 追加
+const bestScoreEl = document.getElementById("bestScore"); 
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
 
 let cowX;
 let score = 0;
-let bestScore = 0; // 👈 追加: ベストスコアを保持する変数
+let bestScore = 0; 
 let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
@@ -110,7 +109,6 @@ let spawner;
 // 2. 初期化処理 (ページ読み込み完了後に実行)
 // ======================================================
 window.onload = function() {
-    // ゲームオーバー画面を非表示
     overlay.style.display = 'none';
 
     // 🏆 ベストスコアの読み込みと表示
@@ -120,7 +118,6 @@ window.onload = function() {
         bestScoreEl.textContent = "ベストスコア：" + bestScore;
     }
 
-    // アイテム生成タイマーを即座に開始
     spawner = setInterval(createItem, spawnInterval); 
 };
 
@@ -145,8 +142,6 @@ function createItem() {
   item.className = "item";
   
   // 🍎 降ってくるアイテムのリスト (重み付け)
-  // 良いアイテム (good): 🌾 x3, 🍎 x1
-  // 悪いアイテム (bad): 🗑️ x1
   const items = [
       { emoji: "🌾", type: "good" },
       { emoji: "🌾", type: "good" },
@@ -155,12 +150,11 @@ function createItem() {
       { emoji: "🗑️", type: "bad" }
   ];
 
-  // ランダムにアイテムを決定
   const randomIndex = Math.floor(Math.random() * items.length);
   const selectedItem = items[randomIndex];
 
   item.textContent = selectedItem.emoji;
-  item.dataset.type = selectedItem.type; // good または bad
+  item.dataset.type = selectedItem.type; 
   
   item.style.left = Math.random() * (window.innerWidth - 40) + "px";
   item.style.top = "0px";
@@ -174,17 +168,27 @@ function createItem() {
     const cowRect = cow.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
 
-    // 当たり判定 (牛とアイテムが接触しているか)
+    // ↓↓ 修正: 当たり判定の条件を緩和（アイテムが牛の上端から10px下に到達後） ↓↓
     if (
-      itemRect.bottom > cowRect.top &&
+      itemRect.bottom > cowRect.top + 10 && // 牛の上端から少し下に余裕を持たせる
       itemRect.left < cowRect.right &&
-      itemRect.right > cowRect.left
+      itemRect.right > cowRect.left &&
+      itemRect.top < cowRect.bottom - 10 // 牛の領域を完全に通り過ぎる前に判定
     ) {
       clearInterval(fall);
       item.remove();
 
       if (item.dataset.type === "good") {
-        score += 10;
+        let points = 0;
+        
+        // ↓↓ 修正: りんごは20点、麦は10点とする ↓↓
+        if (item.textContent === "🍎") {
+            points = 20; 
+        } else {
+            points = 10; 
+        }
+
+        score += points;
         scoreEl.textContent = "スコア：" + score;
         difficultyUp();
       } else {
@@ -201,7 +205,7 @@ function createItem() {
   }, 30);
 }
 
-// 難易度アップ（落下速度と生成間隔に上限/下限を設定）
+// 難易度アップ
 function difficultyUp() {
   if (score % 50 === 0) {
     fallSpeed = Math.min(15, fallSpeed + 0.5); 
@@ -225,8 +229,8 @@ function endGame() {
   // 🏆 ベストスコアの更新と保存
   if (score > bestScore) {
       bestScore = score;
-      localStorage.setItem('bestScore', bestScore); // 保存
-      bestScoreEl.textContent = "ベストスコア：" + bestScore; // 表示更新
+      localStorage.setItem('bestScore', bestScore); 
+      bestScoreEl.textContent = "ベストスコア：" + bestScore; 
   }
 
   overlay.style.display = "flex";
