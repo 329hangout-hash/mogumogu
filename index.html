@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>もぐもぐ牛</title>
+<title>もぐもぐ牛 v6</title>
 
 <style>
   body {
@@ -23,7 +23,15 @@
 
   #score {
     font-size: 26px;
-    padding: 12px;
+    padding: 12px 12px 0; /* ベストスコアとの間隔調整 */
+    text-align: center;
+  }
+
+  /* ↓↓ 追加: ベストスコアのスタイル ↓↓ */
+  #bestScore {
+    font-size: 18px;
+    color: #666;
+    padding: 0 12px 12px;
     text-align: center;
   }
 
@@ -32,7 +40,6 @@
     bottom: 20px;
     font-size: 60px;
     z-index: 50;
-    /* 👈 修正: 牛の初期位置をCSSで中央に設定し、表示を保証 */
     left: calc(50% - 30px); 
   }
 
@@ -70,6 +77,8 @@
 <body>
 <div id="game">
   <div id="score">スコア：0</div>
+  <div id="bestScore">ベストスコア：0</div>
+
   <div id="cow">🐄</div>
 
   <div id="overlay">
@@ -84,12 +93,14 @@
 // ======================================================
 const cow = document.getElementById("cow");
 const scoreEl = document.getElementById("score");
+const bestScoreEl = document.getElementById("bestScore"); // 👈 追加
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
 
 let cowX;
 let score = 0;
+let bestScore = 0; // 👈 追加: ベストスコアを保持する変数
 let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
@@ -102,7 +113,14 @@ window.onload = function() {
     // ゲームオーバー画面を非表示
     overlay.style.display = 'none';
 
-    // 🐄 初期位置はCSSで設定済みのため、ここではタイマーを即座に開始
+    // 🏆 ベストスコアの読み込みと表示
+    const storedScore = localStorage.getItem('bestScore');
+    if (storedScore) {
+        bestScore = parseInt(storedScore);
+        bestScoreEl.textContent = "ベストスコア：" + bestScore;
+    }
+
+    // アイテム生成タイマーを即座に開始
     spawner = setInterval(createItem, spawnInterval); 
 };
 
@@ -110,14 +128,11 @@ window.onload = function() {
 // 3. イベントと関数定義
 // ======================================================
 
-// タップでタップ位置に移動（操作性改善）
+// タップでタップ位置に移動
 document.addEventListener("click", e => {
   if (gameOver) return;
 
-  // タップしたX座標を牛の中央に設定
   let targetX = e.clientX - (cow.offsetWidth / 2); 
-
-  // 画面の端からはみ出さないように制限
   cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
   cow.style.left = cowX + "px";
 });
@@ -128,11 +143,25 @@ function createItem() {
 
   const item = document.createElement("div");
   item.className = "item";
+  
+  // 🍎 降ってくるアイテムのリスト (重み付け)
+  // 良いアイテム (good): 🌾 x3, 🍎 x1
+  // 悪いアイテム (bad): 🗑️ x1
+  const items = [
+      { emoji: "🌾", type: "good" },
+      { emoji: "🌾", type: "good" },
+      { emoji: "🌾", type: "good" },
+      { emoji: "🍎", type: "good" }, 
+      { emoji: "🗑️", type: "bad" }
+  ];
 
-  const isGood = Math.random() < 0.75;
-  item.textContent = isGood ? "🌾" : "🗑️";
-  item.dataset.type = isGood ? "good" : "bad";
+  // ランダムにアイテムを決定
+  const randomIndex = Math.floor(Math.random() * items.length);
+  const selectedItem = items[randomIndex];
 
+  item.textContent = selectedItem.emoji;
+  item.dataset.type = selectedItem.type; // good または bad
+  
   item.style.left = Math.random() * (window.innerWidth - 40) + "px";
   item.style.top = "0px";
 
@@ -193,10 +222,18 @@ function endGame() {
   
   document.querySelectorAll('.item').forEach(el => el.remove());
 
+  // 🏆 ベストスコアの更新と保存
+  if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem('bestScore', bestScore); // 保存
+      bestScoreEl.textContent = "ベストスコア：" + bestScore; // 表示更新
+  }
+
   overlay.style.display = "flex";
   finalText.innerHTML = `
     おつかれさまでした<br>
-    スコア：${score}
+    スコア：${score}<br>
+    <span style="font-size: 80%;">ベストスコア：${bestScore}</span>
   `;
 }
 
