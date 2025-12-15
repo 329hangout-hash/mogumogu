@@ -1,212 +1,276 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>おつまみ牛ゲーム</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>もぐもぐ牛 - 最終版</title>
 
 <style>
   body {
     margin: 0;
-    background: #e9f3e6;
+    background: #e6f2e6; 
     font-family: sans-serif;
-    text-align: center;
+    user-select: none;
   }
 
-  #ui {
-    padding: 10px 0;
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    touch-action: none; 
   }
 
   #score {
-    font-size: 22px;
+    font-size: 26px;
+    padding: 12px 12px 0; 
+    text-align: center;
   }
 
-  #best {
-    font-size: 14px;
+  #bestScore {
+    font-size: 18px;
     color: #666;
+    padding: 0 12px 12px;
+    text-align: center;
   }
 
-  #combo {
-    font-size: 16px;
-    color: orange;
-    margin-top: 6px;
+  /* ★ 修正②：コンボ位置をスコアと被らない左下へ */
+  #comboDisplay {
+    position: absolute;
+    bottom: 140px;
+    left: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff4500; 
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    z-index: 60;
+    opacity: 0; 
+    transition: opacity 0.3s;
+  }
+  
+  #ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100px; 
+    z-index: 40;
+    background: url('ground.png');
+    background-repeat: repeat-x; 
+    background-size: auto 100px; 
   }
 
-  canvas {
+  #cow {
+    position: absolute;
+    bottom: 100px; 
+    z-index: 50;
+    left: calc(50% - 50px); 
+  }
+
+  #cow img {
+    width: 100px; 
+    height: auto;
     display: block;
-    margin: 0 auto;
-    background: #e9f3e6;
+  }
+  
+  .item {
+    position: absolute;
+    z-index: 10;
+  }
+  
+  .item img {
+    display: block;
+    height: auto;
+  }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 26px;
+    text-align: center;
+    z-index: 100;
+  }
+
+  #overlay button {
+    margin-top: 20px;
+    font-size: 22px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
   }
 </style>
 </head>
 
 <body>
-  <div id="ui">
-    <div id="score">スコア：0</div>
-    <div id="best">ベストスコア：0</div>
-    <div id="combo"></div>
-  </div>
+<div id="game">
+  <div id="score">スコア：0</div>
+  <div id="bestScore">ベストスコア：0</div>
+  <div id="comboDisplay"></div>
 
-  <canvas id="game" width="360" height="520"></canvas>
+  <div id="ground"></div>
+  <div id="cow"><img id="cow-img" src="cow_right.png" alt="牛"></div>
+
+  <div id="overlay">
+    <div id="finalText"></div>
+    <button onclick="restart()">もう一回</button>
+  </div>
+</div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const cow = document.getElementById("cow");
+const cowImg = document.getElementById("cow-img"); 
+const scoreEl = document.getElementById("score");
+const bestScoreEl = document.getElementById("bestScore"); 
+const comboDisplay = document.getElementById("comboDisplay"); 
+const overlay = document.getElementById("overlay");
+const finalText = document.getElementById("finalText");
+const gameArea = document.getElementById("game");
 
+let cowX;
 let score = 0;
-let bestScore = localStorage.getItem("bestScore") || 0;
-let combo = 0;
+let bestScore = 0; 
+let comboCount = 0; 
 let gameOver = false;
+let fallSpeed = 3;
+let spawnInterval = 1400;
+let spawner; 
+let lastTapX = window.innerWidth / 2; 
 
-/* ==== 画像 ==== */
-const cowImg = new Image();
-cowImg.src = "cow.png"; // 牛画像
+window.onload = function() {
+  overlay.style.display = 'none';
 
-const onionImg = new Image();
-onionImg.src = "onion.png"; // 玉ねぎ画像
+  const storedScore = localStorage.getItem('bestScore');
+  if (storedScore) {
+    bestScore = parseInt(storedScore);
+    bestScoreEl.textContent = "ベストスコア：" + bestScore;
+  }
 
-const wheatImg = new Image();
-wheatImg.src = "wheat.png"; // 小麦画像
-
-/* ==== 牛 ==== */
-const cow = {
-  x: 180,
-  y: 420,
-  width: 100,
-  height: 100,
-  speed: 5
+  spawner = setInterval(createItem, spawnInterval);
 };
 
-/* ==== 落下物 ==== */
-let items = [];
-
-/* ==== 地面 ==== */
-const groundHeight = 24;
-
-/* ==== 入力 ==== */
-let left = false;
-let right = false;
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowLeft") left = true;
-  if (e.key === "ArrowRight") right = true;
-});
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowLeft") left = false;
-  if (e.key === "ArrowRight") right = false;
-});
-
-/* ==== スマホ操作 ==== */
-canvas.addEventListener("touchstart", e => {
-  const x = e.touches[0].clientX;
-  if (x < window.innerWidth / 2) left = true;
-  else right = true;
-});
-canvas.addEventListener("touchend", () => {
-  left = false;
-  right = false;
-});
-
-/* ==== 当たり判定（縮小） ==== */
-function hit(a, b, shrink = 0.5) {
-  const aw = a.width * shrink;
-  const ah = a.height * shrink;
-  const ax = a.x + (a.width - aw) / 2;
-  const ay = a.y + (a.height - ah) / 2;
-
-  return (
-    ax < b.x + b.width &&
-    ax + aw > b.x &&
-    ay < b.y + b.height &&
-    ay + ah > b.y
-  );
-}
-
-/* ==== アイテム生成 ==== */
-function spawnItem() {
-  const isOnion = Math.random() < 0.3;
-  items.push({
-    x: Math.random() * (canvas.width - 40),
-    y: -40,
-    width: 40,
-    height: 40,
-    speed: 2 + Math.random() * 2,
-    type: isOnion ? "onion" : "wheat"
-  });
-}
-
-/* ==== 更新 ==== */
-function update() {
-  if (gameOver) return;
-
-  if (left) cow.x -= cow.speed;
-  if (right) cow.x += cow.speed;
-
-  cow.x = Math.max(0, Math.min(canvas.width - cow.width, cow.x));
-
-  items.forEach(item => item.y += item.speed);
-
-  items = items.filter(item => {
-    if (item.type === "onion") {
-      if (hit(cow, item, 0.45)) {
-        gameOver = true;
-        bestScore = Math.max(bestScore, score);
-        localStorage.setItem("bestScore", bestScore);
-        return false;
-      }
-    } else {
-      if (hit(cow, item, 0.8)) {
-        score += 10;
-        combo++;
-        return false;
-      }
-    }
-    return item.y < canvas.height;
-  });
-
-  if (Math.random() < 0.03) spawnItem();
-}
-
-/* ==== 描画 ==== */
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  /* 地面 */
-  ctx.fillStyle = "#6fbf73";
-  ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
-
-  /* 牛 */
-  ctx.drawImage(cowImg, cow.x, cow.y, cow.width, cow.height);
-
-  /* アイテム */
-  items.forEach(item => {
-    const img = item.type === "onion" ? onionImg : wheatImg;
-    ctx.drawImage(img, item.x, item.y, item.width, item.height);
-  });
-
-  /* UI */
-  document.getElementById("score").textContent = "スコア： " + score;
-  document.getElementById("best").textContent = "ベストスコア： " + bestScore;
-  document.getElementById("combo").textContent =
-    combo >= 2 ? combo + " COMBO!" : "";
-
-  if (gameOver) {
-    ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#fff";
-    ctx.font = "28px sans-serif";
-    ctx.fillText("GAME OVER", 90, 250);
+function updateComboDisplay(count) {
+  if (count >= 2) {
+    comboDisplay.textContent = `${count} COMBO!`;
+    comboDisplay.style.opacity = 1;
+  } else {
+    comboDisplay.style.opacity = 0;
   }
 }
 
-/* ==== ループ ==== */
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
+// タップ移動
+document.addEventListener("click", e => {
+  if (gameOver) return;
+
+  let targetX = e.clientX - (cow.offsetWidth / 2);
+
+  if (e.clientX > lastTapX) cowImg.src = "cow_right.png";
+  else if (e.clientX < lastTapX) cowImg.src = "cow_left.png";
+
+  lastTapX = e.clientX;
+  cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
+  cow.style.left = cowX + "px";
+});
+
+function createItem() {
+  if (gameOver) return;
+
+  const item = document.createElement("div");
+  item.className = "item";
+
+  const items = [
+    { imgName: "wheat.png", type: "good", size: 80 },
+    { imgName: "wheat.png", type: "good", size: 80 },
+    { imgName: "corn.png", type: "good", size: 80 },
+    { imgName: "onion.png", type: "bad", size: 80 }
+  ];
+
+  const selectedItem = items[Math.floor(Math.random() * items.length)];
+
+  item.innerHTML = `<img src="${selectedItem.imgName}" style="width:${selectedItem.size}px">`;
+  item.dataset.type = selectedItem.type;
+
+  item.style.left = Math.random() * (window.innerWidth - selectedItem.size) + "px";
+  item.style.top = "0px";
+
+  gameArea.appendChild(item);
+
+  const fall = setInterval(() => {
+    item.style.top = item.offsetTop + fallSpeed + "px";
+
+    const cowRect = cow.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+
+    // ★ 修正①：玉ねぎだけ当たり判定を小さく
+    const padding = item.dataset.type === "bad" ? 20 : 0;
+
+    const hit = (
+      itemRect.bottom - padding > cowRect.top + 10 &&
+      itemRect.left + padding < cowRect.right &&
+      itemRect.right - padding > cowRect.left &&
+      itemRect.top + padding < cowRect.bottom - 10
+    );
+
+    if (hit) {
+      clearInterval(fall);
+      item.remove();
+
+      if (item.dataset.type === "good") {
+        score += 10;
+        comboCount++;
+        updateComboDisplay(comboCount);
+        scoreEl.textContent = "スコア：" + score;
+        difficultyUp();
+      } else {
+        endGame();
+      }
+    }
+
+    if (item.offsetTop > window.innerHeight) {
+      clearInterval(fall);
+      item.remove();
+      if (item.dataset.type === "good") {
+        comboCount = 0;
+        updateComboDisplay(comboCount);
+      }
+    }
+  }, 30);
 }
 
-loop();
+function difficultyUp() {
+  if (score % 50 === 0) {
+    fallSpeed = Math.min(15, fallSpeed + 0.5);
+    spawnInterval = Math.max(300, spawnInterval - 100);
+    clearInterval(spawner);
+    spawner = setInterval(createItem, spawnInterval);
+  }
+}
+
+function endGame() {
+  gameOver = true;
+  clearInterval(spawner);
+  document.querySelectorAll('.item').forEach(el => el.remove());
+
+  cowImg.src = "cow_stun.png";
+
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('bestScore', bestScore);
+    bestScoreEl.textContent = "ベストスコア：" + bestScore;
+  }
+
+  overlay.style.display = "flex";
+  finalText.innerHTML = `スコア：${score}<br>ベスト：${bestScore}`;
+}
+
+function restart() {
+  location.reload();
+}
 </script>
 </body>
 </html>
