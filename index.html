@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>もぐもぐ牛 v7</title>
+<title>もぐもぐ牛 - イラスト版</title>
 
 <style>
   body {
@@ -37,15 +37,27 @@
   #cow {
     position: absolute;
     bottom: 20px;
-    font-size: 60px;
     z-index: 50;
     left: calc(50% - 30px); 
+    /* 修正：絵文字のfont-sizeを削除 */
   }
 
+  #cow img {
+    width: 60px; /* 牛の画像のサイズ */
+    height: auto;
+    display: block;
+  }
+  
   .item {
     position: absolute;
-    font-size: 40px;
     z-index: 10;
+    /* 修正：絵文字のfont-sizeを削除 */
+  }
+  
+  .item img {
+    width: 40px; /* アイテムの画像のサイズ */
+    height: 40px;
+    display: block;
   }
 
   #overlay {
@@ -78,7 +90,7 @@
   <div id="score">スコア：0</div>
   <div id="bestScore">ベストスコア：0</div>
 
-  <div id="cow">🐄</div>
+  <div id="cow"><img id="cow-img" src="cow_right.png" alt="牛"></div>
 
   <div id="overlay">
     <div id="finalText"></div>
@@ -91,6 +103,7 @@
 // 1. DOM要素とグローバル変数の定義
 // ======================================================
 const cow = document.getElementById("cow");
+const cowImg = document.getElementById("cow-img"); // 👈 追加: 牛の画像要素
 const scoreEl = document.getElementById("score");
 const bestScoreEl = document.getElementById("bestScore"); 
 const overlay = document.getElementById("overlay");
@@ -104,6 +117,7 @@ let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
 let spawner; 
+let lastTapX = window.innerWidth / 2; // 👈 追加: 最後にタップしたX座標
 
 // ======================================================
 // 2. 初期化処理 (ページ読み込み完了後に実行)
@@ -125,11 +139,20 @@ window.onload = function() {
 // 3. イベントと関数定義
 // ======================================================
 
-// タップでタップ位置に移動
+// タップでタップ位置に移動 
 document.addEventListener("click", e => {
   if (gameOver) return;
 
   let targetX = e.clientX - (cow.offsetWidth / 2); 
+  
+  // ↓↓ 修正: 画像の向きを変えるロジックを追加 ↓↓
+  if (e.clientX > lastTapX) {
+      cowImg.src = "cow_right.png"; // 右向きの画像
+  } else if (e.clientX < lastTapX) {
+      cowImg.src = "cow_left.png"; // 左向きの画像
+  }
+  lastTapX = e.clientX; // 最後のタップ位置を更新
+  
   cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
   cow.style.left = cowX + "px";
 });
@@ -141,20 +164,22 @@ function createItem() {
   const item = document.createElement("div");
   item.className = "item";
   
-  // 🍎 降ってくるアイテムのリスト (重み付け)
+  // ↓↓ 修正: アイテムを画像ファイル名に変更 ↓↓
   const items = [
-      { emoji: "🌾", type: "good" },
-      { emoji: "🌾", type: "good" },
-      { emoji: "🌾", type: "good" },
-      { emoji: "🍎", type: "good" }, 
-      { emoji: "🗑️", type: "bad" }
+      { imgName: "wheat.png", type: "good" }, // 10点
+      { imgName: "wheat.png", type: "good" },
+      { imgName: "wheat.png", type: "good" },
+      { imgName: "corn.png", type: "good" },    // 20点（トウモロコシ）
+      { imgName: "onion.png", type: "bad" }     // ゲームオーバー（玉ねぎ）
   ];
 
   const randomIndex = Math.floor(Math.random() * items.length);
   const selectedItem = items[randomIndex];
 
-  item.textContent = selectedItem.emoji;
+  // ↓↓ 修正: <img>タグを挿入し、画像ファイル名をデータとして保存 ↓↓
+  item.innerHTML = `<img src="${selectedItem.imgName}" alt="${selectedItem.type}">`;
   item.dataset.type = selectedItem.type; 
+  item.dataset.imgName = selectedItem.imgName;
   
   item.style.left = Math.random() * (window.innerWidth - 40) + "px";
   item.style.top = "0px";
@@ -168,12 +193,12 @@ function createItem() {
     const cowRect = cow.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
 
-    // ↓↓ 修正: 当たり判定の条件を緩和（アイテムが牛の上端から10px下に到達後） ↓↓
+    // 当たり判定の緩和版
     if (
-      itemRect.bottom > cowRect.top + 10 && // 牛の上端から少し下に余裕を持たせる
+      itemRect.bottom > cowRect.top + 10 && 
       itemRect.left < cowRect.right &&
       itemRect.right > cowRect.left &&
-      itemRect.top < cowRect.bottom - 10 // 牛の領域を完全に通り過ぎる前に判定
+      itemRect.top < cowRect.bottom - 10 
     ) {
       clearInterval(fall);
       item.remove();
@@ -181,8 +206,8 @@ function createItem() {
       if (item.dataset.type === "good") {
         let points = 0;
         
-        // ↓↓ 修正: りんごは20点、麦は10点とする ↓↓
-        if (item.textContent === "🍎") {
+        // ↓↓ 修正: トウモロコシは20点、麦は10点 ↓↓
+        if (item.dataset.imgName === "corn.png") {
             points = 20; 
         } else {
             points = 10; 
@@ -192,7 +217,7 @@ function createItem() {
         scoreEl.textContent = "スコア：" + score;
         difficultyUp();
       } else {
-        // 🗑️ (バッドアイテム) を取ったらゲームオーバー
+        // 玉ねぎ (bad) を取ったらゲームオーバー
         endGame();
       }
     }
@@ -225,6 +250,11 @@ function endGame() {
   clearInterval(spawner); 
   
   document.querySelectorAll('.item').forEach(el => el.remove());
+
+  // ↓↓ 修正: ゲームオーバー時、牛を目を回した画像にする ↓↓
+  cowImg.src = "cow_stun.png";
+  cowImg.style.width = '70px'; // 座った牛の画像を少し大きく表示する（任意）
+  cow.style.bottom = '15px'; // 座ったように少し位置を下げる（任意）
 
   // 🏆 ベストスコアの更新と保存
   if (score > bestScore) {
