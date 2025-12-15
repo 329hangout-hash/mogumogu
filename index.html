@@ -8,7 +8,7 @@
 <style>
   body {
     margin: 0;
-    background: #e6f2e6; 
+    background: #e6f2e6; /* 薄緑の背景 */
     font-family: sans-serif;
     user-select: none;
   }
@@ -42,37 +42,35 @@
     right: 20px;
     font-size: 36px;
     font-weight: bold;
-    color: #ff4500; 
+    color: #ff4500; /* オレンジレッド */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     z-index: 60;
-    opacity: 0; 
+    opacity: 0; /* 初期は非表示 */
     transition: opacity 0.3s;
   }
   
-  /* ↓↓ 牛の移動エリア（地面イラスト対応） ↓↓ */
+  /* ↓↓ 牛の移動エリア（土と草の背景） ↓↓ */
   #ground {
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 100px; 
+    height: 100px; /* 牛の足元全体を覆う高さ */
     z-index: 40;
-    /* 地面イラスト（ground.png）を背景に設定 */
-    background: url('ground.png');
-    background-repeat: repeat-x; 
-    background-size: auto 100px; 
-    border-top: none; 
+    background: 
+        linear-gradient(to top, #7d4825 50%, #8bc34a 50%); /* 土（茶色）と草（緑）のグラデーション */
+    border-top: 5px solid #5a381d; /* 土の境界線 */
   }
 
-  /* ↓↓ 牛のスタイル (修正箇所) ↓↓ */
+  /* ↓↓ 牛のスタイル ↓↓ */
   #cow {
     position: absolute;
-    bottom: 60px; /* 👈 修正: 牛の位置を上に調整 */
+    bottom: 25px; /* 地面の上に立つように調整 */
     z-index: 50;
     left: calc(50% - 30px); 
   }
 
   #cow img {
-    width: 60px; 
+    width: 60px; /* 牛の画像のサイズ */
     height: auto;
     display: block;
   }
@@ -86,6 +84,7 @@
   .item img {
     display: block;
     height: auto;
+    /* サイズはJavaScriptでアイテムごとに上書き設定します */
   }
 
   /* ↓↓ ゲームオーバー画面のスタイル ↓↓ */
@@ -138,7 +137,7 @@ const cow = document.getElementById("cow");
 const cowImg = document.getElementById("cow-img"); 
 const scoreEl = document.getElementById("score");
 const bestScoreEl = document.getElementById("bestScore"); 
-const comboDisplay = document.getElementById("comboDisplay"); 
+const comboDisplay = document.getElementById("comboDisplay"); // 👈 追加
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
@@ -146,7 +145,7 @@ const gameArea = document.getElementById("game");
 let cowX;
 let score = 0;
 let bestScore = 0; 
-let comboCount = 0; 
+let comboCount = 0; // 👈 追加: コンボカウンター
 let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
@@ -159,6 +158,7 @@ let lastTapX = window.innerWidth / 2;
 window.onload = function() {
     overlay.style.display = 'none';
 
+    // 🏆 ベストスコアの読み込みと表示
     const storedScore = localStorage.getItem('bestScore');
     if (storedScore) {
         bestScore = parseInt(storedScore);
@@ -175,9 +175,9 @@ window.onload = function() {
 function updateComboDisplay(count) {
     if (count >= 2) {
         comboDisplay.textContent = `${count} COMBO!`;
-        comboDisplay.style.opacity = 1; 
+        comboDisplay.style.opacity = 1; // 表示
     } else {
-        comboDisplay.style.opacity = 0; 
+        comboDisplay.style.opacity = 0; // 非表示
     }
 }
 
@@ -210,12 +210,13 @@ function createItem() {
   const item = document.createElement("div");
   item.className = "item";
   
+  // ↓↓ 修正: アイテムのサイズをオブジェクトデータに追加 ↓↓
   const items = [
-      { imgName: "wheat.png", type: "good", size: 90 },    
+      { imgName: "wheat.png", type: "good", size: 90 },    // 90px (10点)
       { imgName: "wheat.png", type: "good", size: 90 },
       { imgName: "wheat.png", type: "good", size: 90 },
-      { imgName: "corn.png", type: "good", size: 90 },     
-      { imgName: "onion.png", type: "bad", size: 100 }     
+      { imgName: "corn.png", type: "good", size: 90 },     // 90px (20点)
+      { imgName: "onion.png", type: "bad", size: 100 }     // 100px (ゲームオーバー)
   ];
 
   const randomIndex = Math.floor(Math.random() * items.length);
@@ -225,6 +226,7 @@ function createItem() {
   item.dataset.type = selectedItem.type; 
   item.dataset.imgName = selectedItem.imgName;
   
+  // ↓↓ 修正: アイテムサイズに合わせて、画面端で切れないようselectedItem.sizeを使用 ↓↓
   item.style.left = Math.random() * (window.innerWidth - selectedItem.size) + "px";
   item.style.top = "0px";
 
@@ -256,6 +258,7 @@ function createItem() {
             points = 10; 
         }
         
+        // 連続キャッチ成功：コンボを増やす
         comboCount += 1;
         updateComboDisplay(comboCount);
 
@@ -303,12 +306,14 @@ function endGame() {
   
   document.querySelectorAll('.item').forEach(el => el.remove());
 
+  // ゲームオーバー時、牛を目を回した画像にする
   cowImg.src = "cow_stun.png";
   cowImg.style.width = '70px'; 
   cow.style.bottom = '15px'; 
   
-  comboDisplay.style.opacity = 0; 
+  comboDisplay.style.opacity = 0; // コンボ表示を消す
 
+  // 🏆 ベストスコアの更新と保存
   if (score > bestScore) {
       bestScore = score;
       localStorage.setItem('bestScore', bestScore); 
