@@ -22,31 +22,33 @@
   }
 
   #score {
-    font-size: 26px;
-    padding: 12px 12px 0; 
-    text-align: center;
-  }
+  font-size: 26px;
+  padding: 24px 12px 0;   /* ← 上の余白を増やして下げる */
+  text-align: center;
+}
 
-  #bestScore {
-    font-size: 18px;
-    color: #666;
-    padding: 0 12px 12px;
-    text-align: center;
+#bestScore {
+  font-size: 18px;
+  color: #666;
+  padding: 4px 12px 12px; /* ← score との間隔を調整 */
+  text-align: center;
   }
 
   /* ★ 修正②：コンボ位置をスコアと被らない左下へ */
-  #comboDisplay {
-    position: absolute;
-    bottom: 140px;
-    left: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #ff4500; 
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    z-index: 60;
-    opacity: 0; 
-    transition: opacity 0.3s;
-  }
+ #comboDisplay {
+  position: absolute;
+  top: 120px;        /* ← ベストスコアの下あたり */
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;   /* ← 少し小さく */
+  font-weight: bold;
+  color: #ff4500;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 60;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
   
   #ground {
     position: absolute;
@@ -60,10 +62,10 @@
   }
 
   #cow {
-    position: absolute;
-    bottom: 100px; 
-    z-index: 50;
-    left: calc(50% - 50px); 
+  position: absolute;
+  bottom: 40px;   /* ← 60pxなどなら、40pxに下げる */
+  z-index: 50;
+  left: calc(50% - 30px);
   }
 
   #cow img {
