@@ -315,13 +315,11 @@ const speedY = baseSpeed * 2;
       endGame();
     }
 
-const groundTop =
-  document.getElementById("ground").getBoundingClientRect().top;
-
-if (crowRect.bottom > groundTop) {
+if (y > window.innerHeight + size) {
   clearInterval(fall);
   crow.remove();
 }
+
 
   }, 30);
 }
