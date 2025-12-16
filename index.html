@@ -255,6 +255,65 @@ else {
     }
   }, 30);
 }
+function createCrow() {
+  if (gameOver || score < 1000) return;
+
+  const crow = document.createElement("div");
+  crow.className = "item";
+
+  const size = 80;
+  const fromLeft = Math.random() < 0.5;
+
+  crow.innerHTML = `
+    <img src="crow.png"
+         style="width:${size}px;
+                transform:${fromLeft ? 'scaleX(1)' : 'scaleX(-1)'};">
+  `;
+
+  let x = fromLeft ? -size : window.innerWidth + size;
+  let y = 0;
+
+  crow.style.left = x + "px";
+  crow.style.top = y + "px";
+
+  gameArea.appendChild(crow);
+
+  const speedX = fromLeft ? 4 : -4;
+  const speedY = 3;
+
+  const fly = setInterval(() => {
+    x += speedX;
+    y += speedY;
+
+    crow.style.left = x + "px";
+    crow.style.top = y + "px";
+
+    const cowRect = cow.getBoundingClientRect();
+    const crowRect = crow.getBoundingClientRect();
+
+    const hit = !(
+      crowRect.right < cowRect.left ||
+      crowRect.left > cowRect.right ||
+      crowRect.bottom < cowRect.top ||
+      crowRect.top > cowRect.bottom
+    );
+
+    if (hit) {
+      clearInterval(fly);
+      crow.remove();
+      endGame();
+    }
+
+    if (
+      y > window.innerHeight ||
+      x < -size * 2 ||
+      x > window.innerWidth + size * 2
+    ) {
+      clearInterval(fly);
+      crow.remove();
+    }
+  }, 30);
+}
 
 function difficultyUp() {
   if (score % 50 === 0) {
