@@ -285,8 +285,6 @@ function createCrow() {
   // 難易度連動スピード
   const diveSpeed = 12; // 固定値（好みで調整）
 
-  // 急降下時のターゲットX（牛の位置）
-  let targetX = 0;
 
   // ★ 修正：ms単位ホバリング
   let hoverTime = 0;
@@ -304,13 +302,12 @@ function createCrow() {
       hoverTime += fallInterval;
     } else if (phase === "hover") {
       phase = "dive";
-      targetX = cow.offsetLeft + cow.offsetWidth / 2 - size / 2;
     }
 
-    if (phase === "dive") {
-      y += diveSpeed;
-      x += (targetX - x) * 0.1;
-    }
+if (phase === "dive") {
+  y += diveSpeed;
+}
+
 
     crow.style.left = x + "px";
     crow.style.top = y + "px";
