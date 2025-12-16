@@ -224,13 +224,21 @@ function createItem() {
       clearInterval(fall);
       item.remove();
 
-      if (item.dataset.type === "good") {
-        score += 10;
-        comboCount++;
-        updateComboDisplay(comboCount);
-        scoreEl.textContent = "スコア：" + score;
-        difficultyUp();
-      } else {
+if (item.dataset.type === "good") {
+  let points = 10;
+
+  if (item.dataset.imgName === "corn.png") {
+    points = 20;
+  }
+
+  comboCount += 1;
+  updateComboDisplay(comboCount);
+
+  score += points;
+  scoreEl.textContent = "スコア：" + score;
+  difficultyUp();
+}
+else {
         endGame();
       }
     }
