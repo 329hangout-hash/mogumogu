@@ -258,61 +258,56 @@ function createItem() {
 }
 
 function createCrow() {
-  if (gameOver || score < 500) return;
+  if (gameOver || score < 300) return;
+
+  // ★ 確率制（3秒未満にはならない）
+  let spawnChance = 0.15; // 基本15%
+
+  if (score >= 500) spawnChance = 0.20;
+  if (score >= 1000) spawnChance = 0.25;
+  if (score >= 1500) spawnChance = 0.30;
+
+  if (Math.random() > spawnChance) return; // ← 出現しない
 
   const crow = document.createElement("div");
   crow.className = "item";
 
   const size = 50;
-
-  crow.innerHTML = `
-    <img src="crow.png" style="width:${size}px;">
-  `;
+  crow.innerHTML = `<img src="crow.png" style="width:${size}px;">`;
   crow.dataset.type = "crow";
 
-  // 初期位置（上空ランダム）
   let x = Math.random() * (window.innerWidth - size);
-  let y = 80; // 画面上部にしっかり見える位置
+  let y = 80;
 
   crow.style.left = x + "px";
   crow.style.top = y + "px";
-
   gameArea.appendChild(crow);
 
-  /* ===== フェーズ管理 ===== */
-  let phase = "hover"; // hover → dive
-
-  // 難易度連動スピード
-  const diveSpeed = 12; // 固定値（好みで調整）
-
-
-  // ★ 修正：ms単位ホバリング
+  let phase = "hover";
   let hoverTime = 0;
-  const maxHoverTime = 800; // ホバリング最大時間(ms)
+  const maxHoverTime = 800;
   const fallInterval = 16;
+  const diveSpeed = 12;
 
   const fall = setInterval(() => {
-    const cowRect = cow.getBoundingClientRect();
     const crowRect = crow.getBoundingClientRect();
+    const cowRect = cow.getBoundingClientRect();
 
     if (phase === "hover" && hoverTime < maxHoverTime) {
-      // ホバリング中はほぼ止まる
       y += 0.2;
-      x += Math.sin(hoverTime / 100) * 1.5; // 微妙な左右揺れ
+      x += Math.sin(hoverTime / 100) * 1.5;
       hoverTime += fallInterval;
     } else if (phase === "hover") {
       phase = "dive";
     }
 
-if (phase === "dive") {
-  y += diveSpeed;
-}
-
+    if (phase === "dive") {
+      y += diveSpeed;
+    }
 
     crow.style.left = x + "px";
     crow.style.top = y + "px";
 
-    // 当たり判定
     const hit = !(
       crowRect.right < cowRect.left ||
       crowRect.left > cowRect.right ||
@@ -330,9 +325,9 @@ if (phase === "dive") {
       clearInterval(fall);
       crow.remove();
     }
-
   }, fallInterval);
 }
+
 
 function difficultyUp() {
   if (score % 50 !== 0) return;
