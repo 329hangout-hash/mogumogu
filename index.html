@@ -315,11 +315,14 @@ const speedY = baseSpeed * 2;
       endGame();
     }
 
-    // ★ 地面（画面下）に落ちたら消える
-    if (y > window.innerHeight) {
-      clearInterval(fall);
-      crow.remove();
-    }
+const groundTop =
+  document.getElementById("ground").getBoundingClientRect().top;
+
+if (crowRect.top > groundTop) {
+  clearInterval(fall);
+  crow.remove();
+}
+
   }, 30);
 }
 
