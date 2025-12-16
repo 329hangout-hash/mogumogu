@@ -22,66 +22,70 @@
   }
 
   #score {
-  font-size: 26px;
-  padding: 24px 12px 0;   /* ← 上の余白を増やして下げる */
-  text-align: center;
-}
-
-#bestScore {
-  font-size: 18px;
-  color: #666;
-  padding: 4px 12px 12px; /* ← score との間隔を調整 */
-  text-align: center;
+    font-size: 26px;
+    padding: 24px 12px 0;
+    text-align: center;
   }
 
-  /* ★ 修正②：コンボ位置をスコアと被らない左下へ */
- #comboDisplay {
-  position: absolute;
-  top: 120px;        /* ← ベストスコアの下あたり */
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 24px;   /* ← 少し小さく */
-  font-weight: bold;
-  color: #ff4500;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  z-index: 60;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
+  #bestScore {
+    font-size: 18px;
+    color: #666;
+    padding: 4px 12px 12px;
+    text-align: center;
+  }
 
-  
+  #comboDisplay {
+    position: absolute;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: bold;
+    color: #ff4500;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    z-index: 60;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  /* ★ 追加：コンボ文字サイズ調整 */
+  #comboDisplay .combo-num {
+    font-size: 32px;   /* 数字は大きく */
+  }
+
+  #comboDisplay .combo-text {
+    font-size: 16px;   /* COMBOだけ小さく */
+    margin-left: 4px;
+  }
+
   #ground {
     position: absolute;
     bottom: 0;
     width: 100%;
     height: 100px; 
     z-index: 40;
-    background: url('ground.png');
-    background-repeat: repeat-x; 
+    background: url('ground.png') repeat-x;
     background-size: auto 100px; 
   }
 
   #cow {
-  position: absolute;
-  bottom: 40px;   /* ← 60pxなどなら、40pxに下げる */
-  z-index: 50;
-  left: calc(50% - 30px);
+    position: absolute;
+    bottom: 40px;
+    z-index: 50;
+    left: calc(50% - 30px);
   }
 
   #cow img {
-    width: 90px; 
-    height: auto;
+    width: 90px;
     display: block;
   }
-  
+
   .item {
     position: absolute;
     z-index: 10;
   }
-  
+
   .item img {
     display: block;
-    height: auto;
   }
 
   #overlay {
@@ -89,12 +93,11 @@
     inset: 0;
     background: rgba(0,0,0,0.7);
     color: #fff;
-    display: none; 
+    display: none;
     align-items: center;
     justify-content: center;
     flex-direction: column;
     font-size: 26px;
-    text-align: center;
     z-index: 100;
   }
 
@@ -126,28 +129,26 @@
 
 <script>
 const cow = document.getElementById("cow");
-const cowImg = document.getElementById("cow-img"); 
+const cowImg = document.getElementById("cow-img");
 const scoreEl = document.getElementById("score");
-const bestScoreEl = document.getElementById("bestScore"); 
-const comboDisplay = document.getElementById("comboDisplay"); 
+const bestScoreEl = document.getElementById("bestScore");
+const comboDisplay = document.getElementById("comboDisplay");
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
 
 let cowX;
 let score = 0;
-let bestScore = 0; 
-let comboCount = 0; 
+let bestScore = 0;
+let comboCount = 0;
 let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
-let spawner; 
-let lastTapX = window.innerWidth / 2; 
+let spawner;
+let lastTapX = window.innerWidth / 2;
 
 window.onload = function() {
-  overlay.style.display = 'none';
-
-  const storedScore = localStorage.getItem('bestScore');
+  const storedScore = localStorage.getItem("bestScore");
   if (storedScore) {
     bestScore = parseInt(storedScore);
     bestScoreEl.textContent = "ベストスコア：" + bestScore;
@@ -155,28 +156,27 @@ window.onload = function() {
 
   spawner = setInterval(createItem, spawnInterval);
   setInterval(createCrow, 3000);
-
 };
 
 function updateComboDisplay(count) {
   if (count >= 2) {
-    comboDisplay.textContent = `${count} COMBO!`;
+    comboDisplay.innerHTML = `
+      <span class="combo-num">${count}</span>
+      <span class="combo-text">COMBO!</span>
+    `;
     comboDisplay.style.opacity = 1;
   } else {
     comboDisplay.style.opacity = 0;
   }
 }
 
-// タップ移動
 document.addEventListener("click", e => {
   if (gameOver) return;
 
-  let targetX = e.clientX - (cow.offsetWidth / 2);
-
-  if (e.clientX > lastTapX) cowImg.src = "cow_right.png";
-  else if (e.clientX < lastTapX) cowImg.src = "cow_left.png";
-
+  let targetX = e.clientX - cow.offsetWidth / 2;
+  cowImg.src = e.clientX > lastTapX ? "cow_right.png" : "cow_left.png";
   lastTapX = e.clientX;
+
   cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
   cow.style.left = cowX + "px";
 });
@@ -196,16 +196,13 @@ function createItem() {
     { imgName: "onion.png", type: "bad", size: 60 }
   ];
 
-  const selectedItem = items[Math.floor(Math.random() * items.length)];
+  const selected = items[Math.floor(Math.random() * items.length)];
+  item.innerHTML = `<img src="${selected.imgName}" style="width:${selected.size}px">`;
+  item.dataset.type = selected.type;
+  item.dataset.imgName = selected.imgName;
 
-  item.innerHTML = `<img src="${selectedItem.imgName}" style="width:${selectedItem.size}px">`;
-  item.dataset.type = selectedItem.type;
-  item.dataset.imgName = selectedItem.imgName;
-
-
-  item.style.left = Math.random() * (window.innerWidth - selectedItem.size) + "px";
+  item.style.left = Math.random() * (window.innerWidth - selected.size) + "px";
   item.style.top = "0px";
-
   gameArea.appendChild(item);
 
   const fall = setInterval(() => {
@@ -213,31 +210,22 @@ function createItem() {
 
     const cowRect = cow.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
-
-    // ★ 修正①：玉ねぎだけ当たり判定を小さく
     const padding = item.dataset.type === "bad" ? 20 : 0;
 
-    const hit = (
+    const hit =
       itemRect.bottom - padding > cowRect.top + 10 &&
       itemRect.left + padding < cowRect.right &&
       itemRect.right - padding > cowRect.left &&
-      itemRect.top + padding < cowRect.bottom - 10
-    );
+      itemRect.top + padding < cowRect.bottom - 10;
 
     if (hit) {
       clearInterval(fall);
       item.remove();
 
       if (item.dataset.type === "good") {
-        let points = 10;
-
-        if (item.dataset.imgName === "corn.png") {
-          points = 20;
-        }
-
-        comboCount += 1;
+        let points = item.dataset.imgName === "corn.png" ? 20 : 10;
+        comboCount++;
         updateComboDisplay(comboCount);
-
         score += points;
         scoreEl.textContent = "スコア：" + score;
         difficultyUp();
@@ -260,54 +248,40 @@ function createItem() {
 function createCrow() {
   if (gameOver || score < 300) return;
 
-  // ★ 確率制（3秒未満にはならない）
-  let spawnChance = 0.15; // 基本15%
-
+  let spawnChance = 0.15;
   if (score >= 500) spawnChance = 0.20;
   if (score >= 1000) spawnChance = 0.25;
   if (score >= 1500) spawnChance = 0.30;
-
-  if (Math.random() > spawnChance) return; // ← 出現しない
+  if (Math.random() > spawnChance) return;
 
   const crow = document.createElement("div");
   crow.className = "item";
-
-  const size = 50;
-  crow.innerHTML = `<img src="crow.png" style="width:${size}px;">`;
-  crow.dataset.type = "crow";
-
-  let x = Math.random() * (window.innerWidth - size);
-  let y = 80;
-
-  crow.style.left = x + "px";
-  crow.style.top = y + "px";
+  crow.innerHTML = `<img src="crow.png" style="width:50px">`;
   gameArea.appendChild(crow);
 
-  let phase = "hover";
+  let x = Math.random() * (window.innerWidth - 50);
+  let y = 80;
+  crow.style.left = x + "px";
+  crow.style.top = y + "px";
+
   let hoverTime = 0;
-  const maxHoverTime = 800;
-  const fallInterval = 16;
-  const diveSpeed = 12;
+  let phase = "hover";
 
   const fall = setInterval(() => {
-    const crowRect = crow.getBoundingClientRect();
-    const cowRect = cow.getBoundingClientRect();
-
-    if (phase === "hover" && hoverTime < maxHoverTime) {
+    if (phase === "hover" && hoverTime < 800) {
       y += 0.2;
       x += Math.sin(hoverTime / 100) * 1.5;
-      hoverTime += fallInterval;
-    } else if (phase === "hover") {
+      hoverTime += 16;
+    } else {
       phase = "dive";
-    }
-
-    if (phase === "dive") {
-      y += diveSpeed;
+      y += 12;
     }
 
     crow.style.left = x + "px";
     crow.style.top = y + "px";
 
+    const crowRect = crow.getBoundingClientRect();
+    const cowRect = cow.getBoundingClientRect();
     const hit = !(
       crowRect.right < cowRect.left ||
       crowRect.left > cowRect.right ||
@@ -321,24 +295,21 @@ function createCrow() {
       endGame();
     }
 
-    if (y > window.innerHeight + size) {
+    if (y > window.innerHeight + 50) {
       clearInterval(fall);
       crow.remove();
     }
-  }, fallInterval);
+  }, 16);
 }
-
 
 function difficultyUp() {
   if (score % 50 !== 0) return;
 
   if (score < 200) {
-    // 〜200点までは現状維持
     fallSpeed = Math.min(15, fallSpeed + 0.5);
     spawnInterval = Math.max(300, spawnInterval - 100);
   } else {
-    // 200点超えから体感が変わる
-    fallSpeed = Math.min(18, fallSpeed + 1.0);
+    fallSpeed = Math.min(18, fallSpeed + 1);
     spawnInterval = Math.max(250, spawnInterval - 150);
   }
 
@@ -349,13 +320,12 @@ function difficultyUp() {
 function endGame() {
   gameOver = true;
   clearInterval(spawner);
-  document.querySelectorAll('.item').forEach(el => el.remove());
-
+  document.querySelectorAll(".item").forEach(el => el.remove());
   cowImg.src = "cow_stun.png";
 
   if (score > bestScore) {
     bestScore = score;
-    localStorage.setItem('bestScore', bestScore);
+    localStorage.setItem("bestScore", bestScore);
     bestScoreEl.textContent = "ベストスコア：" + bestScore;
   }
 
