@@ -257,6 +257,7 @@ else {
     }
   }, 30);
 }
+
 function createCrow() {
   if (gameOver || score < 1000) return;
 
@@ -268,22 +269,26 @@ function createCrow() {
 
   crow.innerHTML = `
     <img src="crow.png"
-         style="width:${size}px;
-                transform:${fromLeft ? 'scaleX(1)' : 'scaleX(-1)'};">
+         style="
+           width:${size}px;
+           transform:${fromLeft ? 'scaleX(1)' : 'scaleX(-1)'};
+         ">
   `;
 
-  let x = fromLeft ? -size : window.innerWidth + size;
-  let y = 0;
+  crow.dataset.type = "crow";
+
+  let x = Math.random() * (window.innerWidth - size);
+  let y = -size;
 
   crow.style.left = x + "px";
   crow.style.top = y + "px";
 
   gameArea.appendChild(crow);
 
-  const speedX = fromLeft ? 4 : -4;
-  const speedY = 3;
+  const speedX = fromLeft ? 2 : -2; // ← 横移動（斜め）
+  const speedY = 4;                // ← 縦落下
 
-  const fly = setInterval(() => {
+  const fall = setInterval(() => {
     x += speedX;
     y += speedY;
 
@@ -301,17 +306,14 @@ function createCrow() {
     );
 
     if (hit) {
-      clearInterval(fly);
+      clearInterval(fall);
       crow.remove();
       endGame();
     }
 
-    if (
-      y > window.innerHeight ||
-      x < -size * 2 ||
-      x > window.innerWidth + size * 2
-    ) {
-      clearInterval(fly);
+    // ★ 地面（画面下）に落ちたら消える
+    if (y > window.innerHeight) {
+      clearInterval(fall);
       crow.remove();
     }
   }, 30);
