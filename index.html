@@ -228,21 +228,20 @@ function createItem() {
       clearInterval(fall);
       item.remove();
 
-if (item.dataset.type === "good") {
-  let points = 10;
+      if (item.dataset.type === "good") {
+        let points = 10;
 
-  if (item.dataset.imgName === "corn.png") {
-    points = 20;
-  }
+        if (item.dataset.imgName === "corn.png") {
+          points = 20;
+        }
 
-  comboCount += 1;
-  updateComboDisplay(comboCount);
+        comboCount += 1;
+        updateComboDisplay(comboCount);
 
-  score += points;
-  scoreEl.textContent = "スコア：" + score;
-  difficultyUp();
-}
-else {
+        score += points;
+        scoreEl.textContent = "スコア：" + score;
+        difficultyUp();
+      } else {
         endGame();
       }
     }
@@ -259,12 +258,12 @@ else {
 }
 
 function createCrow() {
-  if (gameOver || score < 1000) return;
+  if (gameOver || score < 500) return;
 
   const crow = document.createElement("div");
   crow.className = "item";
 
-  const size = 80;
+  const size = 60;
 
   crow.innerHTML = `
     <img src="crow.png" style="width:${size}px;">
@@ -282,32 +281,33 @@ function createCrow() {
 
   /* ===== フェーズ管理 ===== */
   let phase = "hover"; // hover → dive
-  let hoverTime = 0;
 
   // 難易度連動スピード
-  const baseSpeed = 3 + Math.floor(score / 500);
-  const diveSpeed = baseSpeed * 3;
+  const diveSpeed = 12; // 固定値（好みで調整）
 
   // 急降下時のターゲットX（牛の位置）
   let targetX = 0;
+
+  // ★ 修正：ms単位ホバリング
+  let hoverTime = 0;
+  const maxHoverTime = 800; // ホバリング最大時間(ms)
+  const fallInterval = 16;
 
   const fall = setInterval(() => {
     const cowRect = cow.getBoundingClientRect();
     const crowRect = crow.getBoundingClientRect();
 
-    if (phase === "hover") {
-      // 上空でホバリング
-      y += 1;
-      x += Math.sin(hoverTime / 10) * 1.5;
-      hoverTime++;
+    if (phase === "hover" && hoverTime < maxHoverTime) {
+      // ホバリング中はほぼ止まる
+      y += 0.2;
+      x += Math.sin(hoverTime / 100) * 1.5; // 微妙な左右揺れ
+      hoverTime += fallInterval;
+    } else if (phase === "hover") {
+      phase = "dive";
+      targetX = cow.offsetLeft + cow.offsetWidth / 2 - size / 2;
+    }
 
-      // 一定時間で急降下に移行
-      if (hoverTime > 40) {
-        phase = "dive";
-        targetX = cow.offsetLeft + cow.offsetWidth / 2 - size / 2;
-      }
-    } else {
-      // 急降下
+    if (phase === "dive") {
       y += diveSpeed;
       x += (targetX - x) * 0.1;
     }
@@ -329,23 +329,29 @@ function createCrow() {
       endGame();
     }
 
-    // 画面外で削除
     if (y > window.innerHeight + size) {
       clearInterval(fall);
       crow.remove();
     }
 
-  }, 30);
+  }, fallInterval);
 }
 
-
 function difficultyUp() {
-  if (score % 50 === 0) {
+  if (score % 50 !== 0) return;
+
+  if (score < 200) {
+    // 〜200点までは現状維持
     fallSpeed = Math.min(15, fallSpeed + 0.5);
     spawnInterval = Math.max(300, spawnInterval - 100);
-    clearInterval(spawner);
-    spawner = setInterval(createItem, spawnInterval);
+  } else {
+    // 200点超えから体感が変わる
+    fallSpeed = Math.min(18, fallSpeed + 1.0);
+    spawnInterval = Math.max(250, spawnInterval - 150);
   }
+
+  clearInterval(spawner);
+  spawner = setInterval(createItem, spawnInterval);
 }
 
 function endGame() {
