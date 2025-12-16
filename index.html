@@ -188,12 +188,12 @@ function createItem() {
   item.className = "item";
 
   const items = [
-    { imgName: "wheat.png", type: "good", size: 50 },
-    { imgName: "wheat.png", type: "good", size: 50 },
-    { imgName: "wheat.png", type: "good", size: 50 },
-    { imgName: "wheat.png", type: "good", size: 50 },
-    { imgName: "corn.png", type: "good", size: 50 },
-    { imgName: "onion.png", type: "bad", size: 50 }
+    { imgName: "wheat.png", type: "good", size: 60 },
+    { imgName: "wheat.png", type: "good", size: 60 },
+    { imgName: "wheat.png", type: "good", size: 60 },
+    { imgName: "wheat.png", type: "good", size: 60 },
+    { imgName: "corn.png", type: "good", size: 60 },
+    { imgName: "onion.png", type: "bad", size: 60 }
   ];
 
   const selectedItem = items[Math.floor(Math.random() * items.length)];
@@ -318,7 +318,7 @@ const speedY = baseSpeed * 2;
 const groundTop =
   document.getElementById("ground").getBoundingClientRect().top;
 
-if (crowRect.top > groundTop) {
+if (crowRect.bottom > groundTop) {
   clearInterval(fall);
   crow.remove();
 }
