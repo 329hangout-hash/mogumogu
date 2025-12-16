@@ -285,8 +285,12 @@ function createCrow() {
 
   gameArea.appendChild(crow);
 
-  const speedX = fromLeft ? 2 : -2; // ← 横移動（斜め）
-  const speedY = 4;                // ← 縦落下
+// カラス専用：難易度連動スピード
+const baseSpeed = 2 + Math.floor(score / 500); // スコアで段階的に速く
+
+const speedX = fromLeft ? baseSpeed : -baseSpeed;
+const speedY = baseSpeed * 2;
+
 
   const fall = setInterval(() => {
     x += speedX;
