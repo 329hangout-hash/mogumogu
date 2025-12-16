@@ -47,13 +47,12 @@
     transition: opacity 0.3s;
   }
 
-  /* ★ 追加：コンボ文字サイズ調整 */
   #comboDisplay .combo-num {
-    font-size: 32px;   /* 数字は大きく */
+    font-size: 32px;
   }
 
   #comboDisplay .combo-text {
-    font-size: 16px;   /* COMBOだけ小さく */
+    font-size: 16px;
     margin-left: 4px;
   }
 
@@ -114,8 +113,8 @@
 
 <body>
 <div id="game">
-  <div id="score">スコア：0</div>
-  <div id="bestScore">ベストスコア：0</div>
+  <div id="score">￥0</div>
+  <div id="bestScore">最高売却額：￥0</div>
   <div id="comboDisplay"></div>
 
   <div id="ground"></div>
@@ -147,12 +146,19 @@ let spawnInterval = 1400;
 let spawner;
 let lastTapX = window.innerWidth / 2;
 
+/* ★ 追加：円表示フォーマット */
+function formatYen(value) {
+  return "￥" + (value * 1000).toLocaleString();
+}
+
 window.onload = function() {
   const storedScore = localStorage.getItem("bestScore");
   if (storedScore) {
     bestScore = parseInt(storedScore);
-    bestScoreEl.textContent = "ベストスコア：" + bestScore;
+    bestScoreEl.textContent = "最高売却額：" + formatYen(bestScore);
   }
+
+  scoreEl.textContent = formatYen(score);
 
   spawner = setInterval(createItem, spawnInterval);
   setInterval(createCrow, 3000);
@@ -227,7 +233,7 @@ function createItem() {
         comboCount++;
         updateComboDisplay(comboCount);
         score += points;
-        scoreEl.textContent = "スコア：" + score;
+        scoreEl.textContent = formatYen(score);
         difficultyUp();
       } else {
         endGame();
@@ -326,11 +332,14 @@ function endGame() {
   if (score > bestScore) {
     bestScore = score;
     localStorage.setItem("bestScore", bestScore);
-    bestScoreEl.textContent = "ベストスコア：" + bestScore;
+    bestScoreEl.textContent = "最高売却額：" + formatYen(bestScore);
   }
 
   overlay.style.display = "flex";
-  finalText.innerHTML = `スコア：${score}<br>ベスト：${bestScore}`;
+  finalText.innerHTML = `
+    売却額：${formatYen(score)}<br>
+    最高売却額：${formatYen(bestScore)}
+  `;
 }
 
 function restart() {
