@@ -198,6 +198,8 @@ function createItem() {
 
   item.innerHTML = `<img src="${selectedItem.imgName}" style="width:${selectedItem.size}px">`;
   item.dataset.type = selectedItem.type;
+  item.dataset.imgName = selectedItem.imgName;
+
 
   item.style.left = Math.random() * (window.innerWidth - selectedItem.size) + "px";
   item.style.top = "0px";
