@@ -265,18 +265,13 @@ function createCrow() {
   crow.className = "item";
 
   const size = 80;
-  const fromLeft = Math.random() < 0.5;
 
   crow.innerHTML = `
-    <img src="crow.png"
-         style="
-           width:${size}px;
-           transform:${fromLeft ? 'scaleX(1)' : 'scaleX(-1)'};
-         ">
+    <img src="crow.png" style="width:${size}px;">
   `;
-
   crow.dataset.type = "crow";
 
+  // 初期位置（上空ランダム）
   let x = Math.random() * (window.innerWidth - size);
   let y = -size;
 
@@ -285,23 +280,42 @@ function createCrow() {
 
   gameArea.appendChild(crow);
 
-// カラス専用：難易度連動スピード
-const baseSpeed = 2 + Math.floor(score / 500); // スコアで段階的に速く
+  /* ===== フェーズ管理 ===== */
+  let phase = "hover"; // hover → dive
+  let hoverTime = 0;
 
-const speedX = fromLeft ? baseSpeed : -baseSpeed;
-const speedY = baseSpeed * 2;
+  // 難易度連動スピード
+  const baseSpeed = 3 + Math.floor(score / 500);
+  const diveSpeed = baseSpeed * 3;
 
+  // 急降下時のターゲットX（牛の位置）
+  let targetX = 0;
 
   const fall = setInterval(() => {
-    x += speedX;
-    y += speedY;
+    const cowRect = cow.getBoundingClientRect();
+    const crowRect = crow.getBoundingClientRect();
+
+    if (phase === "hover") {
+      // 上空でホバリング
+      y += 1;
+      x += Math.sin(hoverTime / 10) * 1.5;
+      hoverTime++;
+
+      // 一定時間で急降下に移行
+      if (hoverTime > 40) {
+        phase = "dive";
+        targetX = cow.offsetLeft + cow.offsetWidth / 2 - size / 2;
+      }
+    } else {
+      // 急降下
+      y += diveSpeed;
+      x += (targetX - x) * 0.1;
+    }
 
     crow.style.left = x + "px";
     crow.style.top = y + "px";
 
-    const cowRect = cow.getBoundingClientRect();
-    const crowRect = crow.getBoundingClientRect();
-
+    // 当たり判定
     const hit = !(
       crowRect.right < cowRect.left ||
       crowRect.left > cowRect.right ||
@@ -315,14 +329,15 @@ const speedY = baseSpeed * 2;
       endGame();
     }
 
-if (y > window.innerHeight + size) {
-  clearInterval(fall);
-  crow.remove();
-}
-
+    // 画面外で削除
+    if (y > window.innerHeight + size) {
+      clearInterval(fall);
+      crow.remove();
+    }
 
   }, 30);
 }
+
 
 function difficultyUp() {
   if (score % 50 === 0) {
