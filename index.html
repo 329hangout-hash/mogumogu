@@ -71,3 +71,184 @@
 
   .item { position: absolute; z-index: 10; }
   .item img { display: block; }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 26px;
+    z-index: 100;
+  }
+
+  #overlay button {
+    margin-top: 20px;
+    font-size: 22px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+</style>
+</head>
+
+<body>
+<div id="game">
+  <div id="score">￥0</div>
+  <div id="bestScore">最高売却額：￥0</div>
+  <div id="comboDisplay"></div>
+
+  <div id="ground"></div>
+  <div id="cow"><img id="cow-img" src="cow_right.png"></div>
+
+  <div id="overlay">
+    <div id="finalText"></div>
+    <button onclick="restart()">もう一回</button>
+  </div>
+</div>
+
+<script>
+const cow = document.getElementById("cow");
+const cowImg = document.getElementById("cow-img");
+const scoreEl = document.getElementById("score");
+const bestScoreEl = document.getElementById("bestScore");
+const comboDisplay = document.getElementById("comboDisplay");
+const overlay = document.getElementById("overlay");
+const finalText = document.getElementById("finalText");
+const gameArea = document.getElementById("game");
+
+let score = 0;
+let bestScore = 0;
+let comboCount = 0;
+let gameOver = false;
+let fallSpeed = 3;
+let spawnInterval = 1400;
+let spawner;
+let lastTapX = window.innerWidth / 2;
+
+function formatYen(v) {
+  return "￥" + (v * 1000).toLocaleString();
+}
+
+window.onload = () => {
+  const stored = localStorage.getItem("bestScore");
+  if (stored) {
+    bestScore = parseInt(stored);
+    bestScoreEl.textContent = "最高売却額：" + formatYen(bestScore);
+  }
+  scoreEl.textContent = formatYen(score);
+  spawner = setInterval(createItem, spawnInterval);
+  setInterval(createCrow, 3000);
+};
+
+document.addEventListener("click", e => {
+  if (gameOver) return;
+  cowImg.style.transform = e.clientX < lastTapX ? "scaleX(-1)" : "scaleX(1)";
+  lastTapX = e.clientX;
+  cow.style.left = Math.max(0, Math.min(innerWidth - cow.offsetWidth, e.clientX - cow.offsetWidth / 2)) + "px";
+});
+
+function createItem() {
+  if (gameOver) return;
+  const item = document.createElement("div");
+  item.className = "item";
+
+  const data = [
+    { img:"wheat.png", type:"good", size:60 },
+    { img:"corn.png",  type:"good", size:60 },
+    { img:"onion.png", type:"bad",  size:60 }
+  ];
+  const d = data[Math.floor(Math.random() * data.length)];
+  item.innerHTML = `<img src="${d.img}" style="width:${d.size}px">`;
+  item.dataset.type = d.type;
+  item.style.left = Math.random() * (innerWidth - d.size) + "px";
+  item.style.top = "0px";
+  gameArea.appendChild(item);
+
+  const fall = setInterval(() => {
+    item.style.top = item.offsetTop + fallSpeed + "px";
+
+    const a = item.getBoundingClientRect();
+    const b = cow.getBoundingClientRect();
+    if (!(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)) {
+      clearInterval(fall);
+      item.remove();
+      if (d.type === "good") {
+        score += d.img === "corn.png" ? 20 : 10;
+        scoreEl.textContent = formatYen(score);
+      } else endGame();
+    }
+
+    if (item.offsetTop > innerHeight) {
+      clearInterval(fall);
+      item.remove();
+    }
+  }, 30);
+}
+
+/* ★★★ カラス：ホバリング → 真下に急降下 ★★★ */
+function createCrow() {
+  if (gameOver || score < 300) return;
+
+  let chance = 0.15;
+  if (score >= 500) chance = 0.2;
+  if (score >= 1000) chance = 0.25;
+  if (score >= 1500) chance = 0.3;
+  if (Math.random() > chance) return;
+
+  const crow = document.createElement("div");
+  crow.className = "item";
+  crow.innerHTML = `<img src="crow.png" style="width:50px">`;
+  gameArea.appendChild(crow);
+
+  let x = Math.random() * (innerWidth - 50);
+  let y = 80;
+  let hover = 0;
+
+  const fall = setInterval(() => {
+    if (hover < 800) {
+      hover += 16;
+      y += 0.3;
+      x += Math.sin(hover / 120) * 1.2;
+    } else {
+      y += 12;
+    }
+
+    crow.style.left = x + "px";
+    crow.style.top = y + "px";
+
+    const a = crow.getBoundingClientRect();
+    const b = cow.getBoundingClientRect();
+    if (!(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)) {
+      clearInterval(fall);
+      crow.remove();
+      endGame();
+    }
+
+    if (y > innerHeight + 50) {
+      clearInterval(fall);
+      crow.remove();
+    }
+  }, 16);
+}
+
+function endGame() {
+  gameOver = true;
+  clearInterval(spawner);
+  document.querySelectorAll(".item").forEach(e => e.remove());
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem("bestScore", bestScore);
+  }
+  overlay.style.display = "flex";
+  finalText.innerHTML = `売却額：${formatYen(score)}<br>最高売却額：${formatYen(bestScore)}`;
+}
+
+function restart() { location.reload(); }
+</script>
+</body>
+</html>
