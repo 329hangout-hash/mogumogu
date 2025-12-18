@@ -37,7 +37,7 @@
 
   #comboDisplay {
     position: absolute;
-    top: 70px;
+    top: 110px;
     left: 50%;
     transform: translateX(-50%);
     font-weight: bold;
@@ -409,7 +409,7 @@ function createCrow() {
     if (phase === "hover") {
       hoverCount++;
       y += Math.sin(hoverCount / 6) * 0.6;
-      if (hoverCount > 45) phase = "dive";
+      if (hoverCount > 80) phase = "dive";
     } else {
       y += 12;
     }
