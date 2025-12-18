@@ -131,17 +131,18 @@ const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
 
 let cowX = window.innerWidth / 2 - 45;
+
 let score = 0;
 let bestScore = 0;
 let gameOver = false;
 let fallSpeed = 3;
 let lastDir = 1;
 let currentStage = "kids";
-let itemTimer; // ★変更：setTimeout用
+let itemTimer;
 
 function formatYen(v){ return "￥" + (v * 1000).toLocaleString(); }
 
-/* ★ 成長判定＋演出（変更なし） */
+/* 成長判定＋演出 */
 function updateCowStage() {
   const yen = score * 1000;
   let nextStage = "kids";
@@ -161,7 +162,7 @@ function updateCowStage() {
   setTimeout(() => cowImg.classList.remove("grow"), 300);
 }
 
-/* ★変更：スコアで生成間隔を決める */
+/* 生成間隔関数（残したまま・未使用） */
 function getSpawnInterval(score){
   if (score < 300)  return 1400;
   if (score < 600)  return 1100;
@@ -170,13 +171,26 @@ function getSpawnInterval(score){
   return 550;
 }
 
-/* ★変更：次のアイテム生成を予約 */
+/* ★追加：画面内制限＋ランダム遅延 */
+const MAX_ITEMS_ON_SCREEN = 3;
+const MIN_DELAY = 300;
+const MAX_DELAY = 900;
+
+/* ★変更：ランダム遅延＋個数制限生成 */
 function scheduleNextItem(){
   if (gameOver) return;
+
+  const delay = Math.random() * (MAX_DELAY - MIN_DELAY) + MIN_DELAY;
+
   itemTimer = setTimeout(() => {
-    createItem();
+    const itemsOnScreen = document.querySelectorAll('.item').length;
+
+    if (itemsOnScreen < MAX_ITEMS_ON_SCREEN) {
+      createItem();
+    }
+
     scheduleNextItem();
-  }, getSpawnInterval(score));
+  }, delay);
 }
 
 window.onload = function() {
@@ -187,7 +201,7 @@ window.onload = function() {
   }
   scoreEl.textContent = formatYen(score);
 
-  scheduleNextItem();          // ★変更
+  scheduleNextItem();
   setInterval(createCrow, 3000);
 };
 
@@ -229,35 +243,36 @@ function createItem() {
     const a = cow.getBoundingClientRect();
     const b = item.getBoundingClientRect();
 
-  // ★ 玉ねぎだけ当たり判定を内側に縮める
-const pad = s.type === "bad" ? 20 : 0;
+    const pad = s.type === "bad" ? 20 : 0;
 
-const hit =
-  b.right - pad > a.left &&
-  b.left + pad < a.right &&
-  b.bottom - pad > a.top &&
-  b.top + pad < a.bottom;
+    const hit =
+      b.right - pad > a.left &&
+      b.left + pad < a.right &&
+      b.bottom - pad > a.top &&
+      b.top + pad < a.bottom;
 
-if (hit) {
-  clearInterval(fall);
-  item.remove();
+    if (hit) {
+      clearInterval(fall);
+      item.remove();
 
-  if (s.type === "good") {
-    score += s.img === "corn.png" ? 20 : 10;
-    scoreEl.textContent = formatYen(score);
-    updateCowStage();
-    difficultyUp();
-  } else {
-    endGame();
-  }
-}
+      if (s.type === "good") {
+        score += s.img === "corn.png" ? 20 : 10;
+        scoreEl.textContent = formatYen(score);
+        updateCowStage();
+        difficultyUp();
+      } else {
+        endGame();
+      }
+    }
 
-
-    if (item.offsetTop>innerHeight){ clearInterval(fall); item.remove(); }
+    if (item.offsetTop > innerHeight) {
+      clearInterval(fall);
+      item.remove();
+    }
   },30);
 }
 
-/* カラス（変更なし） */
+/* カラス */
 function createCrow() {
   if (gameOver || score < 300) return;
   if (Math.random() > 0.2) return;
@@ -309,7 +324,7 @@ function difficultyUp(){
 
 function endGame(){
   gameOver=true;
-  clearTimeout(itemTimer); // ★変更
+  clearTimeout(itemTimer);
   if(score>bestScore){
     bestScore=score;
     localStorage.setItem("bestScore",bestScore);
