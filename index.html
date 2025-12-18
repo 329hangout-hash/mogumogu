@@ -46,9 +46,6 @@
     transition: opacity 0.3s;
   }
 
-  #comboDisplay .combo-num { font-size: 32px; }
-  #comboDisplay .combo-text { font-size: 16px; margin-left: 4px; }
-
   #ground {
     position: absolute;
     bottom: 0;
@@ -72,7 +69,6 @@
     transition: transform 0.25s ease;
   }
 
-  /* ★ 成長演出 */
   .grow {
     animation: growPop 0.3s ease;
   }
@@ -130,7 +126,6 @@ const cow = document.getElementById("cow");
 const cowImg = document.getElementById("cow-img");
 const scoreEl = document.getElementById("score");
 const bestScoreEl = document.getElementById("bestScore");
-const comboDisplay = document.getElementById("comboDisplay");
 const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
@@ -138,18 +133,15 @@ const gameArea = document.getElementById("game");
 let cowX;
 let score = 0;
 let bestScore = 0;
-let comboCount = 0;
 let gameOver = false;
 let fallSpeed = 3;
-let spawnInterval = 1400;
-let spawner;
 let lastDir = 1;
 let currentStage = "kids";
+let itemTimer; // ★変更：setTimeout用
 
-/* 円表示 */
 function formatYen(v){ return "￥" + (v * 1000).toLocaleString(); }
 
-/* ★ 成長判定＋演出 */
+/* ★ 成長判定＋演出（変更なし） */
 function updateCowStage() {
   const yen = score * 1000;
   let nextStage = "kids";
@@ -160,7 +152,6 @@ function updateCowStage() {
   if (nextStage === currentStage) return;
 
   currentStage = nextStage;
-
   cowImg.src =
     nextStage === "kids"  ? "cowkids.png" :
     nextStage === "adult" ? "cow_right.png" :
@@ -170,6 +161,24 @@ function updateCowStage() {
   setTimeout(() => cowImg.classList.remove("grow"), 300);
 }
 
+/* ★変更：スコアで生成間隔を決める */
+function getSpawnInterval(score){
+  if (score < 300)  return 1400;
+  if (score < 600)  return 1100;
+  if (score < 900)  return 900;
+  if (score < 1200) return 700;
+  return 550;
+}
+
+/* ★変更：次のアイテム生成を予約 */
+function scheduleNextItem(){
+  if (gameOver) return;
+  itemTimer = setTimeout(() => {
+    createItem();
+    scheduleNextItem();
+  }, getSpawnInterval(score));
+}
+
 window.onload = function() {
   const stored = localStorage.getItem("bestScore");
   if (stored) {
@@ -177,7 +186,8 @@ window.onload = function() {
     bestScoreEl.textContent = "最高売却額：" + formatYen(bestScore);
   }
   scoreEl.textContent = formatYen(score);
-  spawner = setInterval(createItem, spawnInterval);
+
+  scheduleNextItem();          // ★変更
   setInterval(createCrow, 3000);
 };
 
@@ -207,8 +217,6 @@ function createItem() {
 
   const s = items[Math.floor(Math.random()*items.length)];
   item.innerHTML = `<img src="${s.img}" style="width:${s.size}px">`;
-  item.dataset.type = s.type;
-  item.dataset.img = s.img;
   item.style.left = Math.random()*(window.innerWidth-s.size)+"px";
   item.style.top = "0px";
   gameArea.appendChild(item);
@@ -235,6 +243,7 @@ function createItem() {
   },30);
 }
 
+/* カラス（変更なし） */
 function createCrow() {
   if (gameOver || score < 300) return;
   if (Math.random() > 0.2) return;
@@ -246,23 +255,19 @@ function createCrow() {
 
   let x = Math.random() * (innerWidth - 50);
   let y = 80;
-
   crow.style.left = x + "px";
   crow.style.top = y + "px";
 
-  let phase = "hover";   // hover → dive
+  let phase = "hover";
   let hoverCount = 0;
 
   const fall = setInterval(() => {
     if (phase === "hover") {
       hoverCount++;
-      y += Math.sin(hoverCount / 6) * 0.6; // ふわふわホバリング
-
-      if (hoverCount > 45) {
-        phase = "dive";
-      }
+      y += Math.sin(hoverCount / 6) * 0.6;
+      if (hoverCount > 45) phase = "dive";
     } else {
-      y += 12; // 急降下
+      y += 12;
     }
 
     crow.style.top = y + "px";
@@ -270,7 +275,7 @@ function createCrow() {
     const a = cow.getBoundingClientRect();
     const b = crow.getBoundingClientRect();
 
-    if (!(b.right < a.left || b.left > a.right || b.bottom < a.top || b.top > a.bottom)) {
+    if (!(b.right<a.left||b.left>a.right||b.bottom<a.top||b.top>a.bottom)) {
       clearInterval(fall);
       crow.remove();
       endGame();
@@ -290,7 +295,7 @@ function difficultyUp(){
 
 function endGame(){
   gameOver=true;
-  clearInterval(spawner);
+  clearTimeout(itemTimer); // ★変更
   if(score>bestScore){
     bestScore=score;
     localStorage.setItem("bestScore",bestScore);
