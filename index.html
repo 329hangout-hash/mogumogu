@@ -130,7 +130,7 @@ const overlay = document.getElementById("overlay");
 const finalText = document.getElementById("finalText");
 const gameArea = document.getElementById("game");
 
-let cowX;
+let cowX = window.innerWidth / 2 - 45;
 let score = 0;
 let bestScore = 0;
 let gameOver = false;
@@ -194,7 +194,8 @@ window.onload = function() {
 document.addEventListener("click", e => {
   if (gameOver) return;
 
-  const dir = e.clientX > (cowX ?? e.clientX) ? 1 : -1;
+  const cowCenter = cowX + cow.offsetWidth / 2;
+  const dir = e.clientX > cowCenter ? 1 : -1;
   lastDir = dir;
   cowImg.style.setProperty("--dir", dir);
   cowImg.style.transform = `scaleX(${dir})`;
@@ -217,6 +218,7 @@ function createItem() {
 
   const s = items[Math.floor(Math.random()*items.length)];
   item.innerHTML = `<img src="${s.img}" style="width:${s.size}px">`;
+  item.dataset.type = s.type;
   item.style.left = Math.random()*(window.innerWidth-s.size)+"px";
   item.style.top = "0px";
   gameArea.appendChild(item);
@@ -227,17 +229,29 @@ function createItem() {
     const a = cow.getBoundingClientRect();
     const b = item.getBoundingClientRect();
 
-    if (!(b.right<a.left||b.left>a.right||b.bottom<a.top||b.top>a.bottom)) {
-      clearInterval(fall);
-      item.remove();
+  // ★ 玉ねぎだけ当たり判定を内側に縮める
+const pad = s.type === "bad" ? 20 : 0;
 
-      if (s.type==="good") {
-        score += s.img==="corn.png"?20:10;
-        scoreEl.textContent = formatYen(score);
-        updateCowStage();
-        difficultyUp();
-      } else endGame();
-    }
+const hit =
+  b.right - pad > a.left &&
+  b.left + pad < a.right &&
+  b.bottom - pad > a.top &&
+  b.top + pad < a.bottom;
+
+if (hit) {
+  clearInterval(fall);
+  item.remove();
+
+  if (s.type === "good") {
+    score += s.img === "corn.png" ? 20 : 10;
+    scoreEl.textContent = formatYen(score);
+    updateCowStage();
+    difficultyUp();
+  } else {
+    endGame();
+  }
+}
+
 
     if (item.offsetTop>innerHeight){ clearInterval(fall); item.remove(); }
   },30);
