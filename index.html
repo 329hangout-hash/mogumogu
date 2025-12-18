@@ -172,11 +172,11 @@ function getSpawnInterval(score){
 }
 
 function getMaxItemsOnScreen(score){
-  if (score < 500)  return 2;   // 序盤：落ち着いて覚える
-  if (score < 900)  return 3;   // 中盤：今と同じ体感
-  if (score < 1300) return 4;   // ここから忙しくなる
-  if (score < 1800) return 5;   // 盛り上がりゾーン
-  return 6;                     // 終盤：ワチャっと感
+  if (score < 100)  return 2;   // 最序盤だけゆっくり
+  if (score < 900)  return 3;   // メインゾーン
+  if (score < 1300) return 4;
+  if (score < 1800) return 5;
+  return 6;
 }
 
 
