@@ -8,7 +8,7 @@
 <style>
   body {
     margin: 0;
-    background: #e6f2e6; 
+    background: #e6f2e6;
     font-family: sans-serif;
     user-select: none;
   }
@@ -18,7 +18,7 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    touch-action: none; 
+    touch-action: none;
   }
 
   #score {
@@ -41,29 +41,22 @@
     transform: translateX(-50%);
     font-weight: bold;
     color: #ff4500;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     z-index: 60;
     opacity: 0;
     transition: opacity 0.3s;
   }
 
-  #comboDisplay .combo-num {
-    font-size: 32px;
-  }
-
-  #comboDisplay .combo-text {
-    font-size: 16px;
-    margin-left: 4px;
-  }
+  #comboDisplay .combo-num { font-size: 32px; }
+  #comboDisplay .combo-text { font-size: 16px; margin-left: 4px; }
 
   #ground {
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 100px; 
+    height: 100px;
     z-index: 40;
     background: url('ground.png') repeat-x;
-    background-size: auto 100px; 
+    background-size: auto 100px;
   }
 
   #cow {
@@ -76,16 +69,22 @@
   #cow img {
     width: 90px;
     display: block;
+    transition: transform 0.25s ease;
   }
 
-  .item {
-    position: absolute;
-    z-index: 10;
+  /* ★ 成長演出 */
+  .grow {
+    animation: growPop 0.3s ease;
   }
 
-  .item img {
-    display: block;
+  @keyframes growPop {
+    0%   { transform: scaleX(var(--dir,1)) scale(1); }
+    50%  { transform: scaleX(var(--dir,1)) scale(1.25); }
+    100% { transform: scaleX(var(--dir,1)) scale(1); }
   }
+
+  .item { position: absolute; z-index: 10; }
+  .item img { display: block; }
 
   #overlay {
     position: absolute;
@@ -118,7 +117,7 @@
   <div id="comboDisplay"></div>
 
   <div id="ground"></div>
-  <div id="cow"><img id="cow-img" src="cow_right.png" alt="牛"></div>
+  <div id="cow"><img id="cow-img" src="cowkids.png"></div>
 
   <div id="overlay">
     <div id="finalText"></div>
@@ -144,46 +143,53 @@ let gameOver = false;
 let fallSpeed = 3;
 let spawnInterval = 1400;
 let spawner;
-let lastTapX = window.innerWidth / 2;
+let lastDir = 1;
+let currentStage = "kids";
 
-/* ★ 追加：円表示フォーマット */
-function formatYen(value) {
-  return "￥" + (value * 1000).toLocaleString();
+/* 円表示 */
+function formatYen(v){ return "￥" + (v * 1000).toLocaleString(); }
+
+/* ★ 成長判定＋演出 */
+function updateCowStage() {
+  const yen = score * 1000;
+  let nextStage = "kids";
+
+  if (yen >= 1500000) nextStage = "big";
+  else if (yen >= 500000) nextStage = "adult";
+
+  if (nextStage === currentStage) return;
+
+  currentStage = nextStage;
+
+  cowImg.src =
+    nextStage === "kids"  ? "cowkids.png" :
+    nextStage === "adult" ? "cow_right.png" :
+                            "cowbig.png";
+
+  cowImg.classList.add("grow");
+  setTimeout(() => cowImg.classList.remove("grow"), 300);
 }
 
 window.onload = function() {
-  const storedScore = localStorage.getItem("bestScore");
-  if (storedScore) {
-    bestScore = parseInt(storedScore);
+  const stored = localStorage.getItem("bestScore");
+  if (stored) {
+    bestScore = parseInt(stored);
     bestScoreEl.textContent = "最高売却額：" + formatYen(bestScore);
   }
-
   scoreEl.textContent = formatYen(score);
-
   spawner = setInterval(createItem, spawnInterval);
   setInterval(createCrow, 3000);
 };
 
-function updateComboDisplay(count) {
-  if (count >= 2) {
-    comboDisplay.innerHTML = `
-      <span class="combo-num">${count}</span>
-      <span class="combo-text">COMBO!</span>
-    `;
-    comboDisplay.style.opacity = 1;
-  } else {
-    comboDisplay.style.opacity = 0;
-  }
-}
-
 document.addEventListener("click", e => {
   if (gameOver) return;
 
-  let targetX = e.clientX - cow.offsetWidth / 2;
-  cowImg.src = e.clientX > lastTapX ? "cow_right.png" : "cow_left.png";
-  lastTapX = e.clientX;
+  const dir = e.clientX > (cowX ?? e.clientX) ? 1 : -1;
+  lastDir = dir;
+  cowImg.style.setProperty("--dir", dir);
+  cowImg.style.transform = `scaleX(${dir})`;
 
-  cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, targetX));
+  cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, e.clientX - cow.offsetWidth/2));
   cow.style.left = cowX + "px";
 });
 
@@ -194,157 +200,83 @@ function createItem() {
   item.className = "item";
 
   const items = [
-    { imgName: "wheat.png", type: "good", size: 60 },
-    { imgName: "wheat.png", type: "good", size: 60 },
-    { imgName: "wheat.png", type: "good", size: 60 },
-    { imgName: "wheat.png", type: "good", size: 60 },
-    { imgName: "corn.png", type: "good", size: 60 },
-    { imgName: "onion.png", type: "bad", size: 60 }
+    { img:"wheat.png", type:"good", size:60 },
+    { img:"corn.png", type:"good", size:60 },
+    { img:"onion.png", type:"bad",  size:60 }
   ];
 
-  const selected = items[Math.floor(Math.random() * items.length)];
-  item.innerHTML = `<img src="${selected.imgName}" style="width:${selected.size}px">`;
-  item.dataset.type = selected.type;
-  item.dataset.imgName = selected.imgName;
-
-  item.style.left = Math.random() * (window.innerWidth - selected.size) + "px";
+  const s = items[Math.floor(Math.random()*items.length)];
+  item.innerHTML = `<img src="${s.img}" style="width:${s.size}px">`;
+  item.dataset.type = s.type;
+  item.dataset.img = s.img;
+  item.style.left = Math.random()*(window.innerWidth-s.size)+"px";
   item.style.top = "0px";
   gameArea.appendChild(item);
 
-  const fall = setInterval(() => {
+  const fall = setInterval(()=>{
     item.style.top = item.offsetTop + fallSpeed + "px";
 
-    const cowRect = cow.getBoundingClientRect();
-    const itemRect = item.getBoundingClientRect();
-    const padding = item.dataset.type === "bad" ? 20 : 0;
+    const a = cow.getBoundingClientRect();
+    const b = item.getBoundingClientRect();
 
-    const hit =
-      itemRect.bottom - padding > cowRect.top + 10 &&
-      itemRect.left + padding < cowRect.right &&
-      itemRect.right - padding > cowRect.left &&
-      itemRect.top + padding < cowRect.bottom - 10;
-
-    if (hit) {
+    if (!(b.right<a.left||b.left>a.right||b.bottom<a.top||b.top>a.bottom)) {
       clearInterval(fall);
       item.remove();
 
-      if (item.dataset.type === "good") {
-        let points = item.dataset.imgName === "corn.png" ? 20 : 10;
-        comboCount++;
-        updateComboDisplay(comboCount);
-        score += points;
+      if (s.type==="good") {
+        score += s.img==="corn.png"?20:10;
         scoreEl.textContent = formatYen(score);
+        updateCowStage();
         difficultyUp();
-      } else {
-        endGame();
-      }
+      } else endGame();
     }
 
-    if (item.offsetTop > window.innerHeight) {
-      clearInterval(fall);
-      item.remove();
-      if (item.dataset.type === "good") {
-        comboCount = 0;
-        updateComboDisplay(comboCount);
-      }
-    }
-  }, 30);
+    if (item.offsetTop>innerHeight){ clearInterval(fall); item.remove(); }
+  },30);
 }
 
 function createCrow() {
   if (gameOver || score < 300) return;
-
-  let spawnChance = 0.15;
-  if (score >= 500) spawnChance = 0.20;
-  if (score >= 1000) spawnChance = 0.25;
-  if (score >= 1500) spawnChance = 0.30;
-  if (Math.random() > spawnChance) return;
+  if (Math.random() > 0.2) return;
 
   const crow = document.createElement("div");
   crow.className = "item";
   crow.innerHTML = `<img src="crow.png" style="width:50px">`;
   gameArea.appendChild(crow);
 
-  let x = Math.random() * (window.innerWidth - 50);
+  let x = Math.random()*(innerWidth-50);
   let y = 80;
-  crow.style.left = x + "px";
-  crow.style.top = y + "px";
+  crow.style.left=x+"px"; crow.style.top=y+"px";
 
-  let hoverTime = 0;
-  let phase = "hover";
+  const fall=setInterval(()=>{
+    y+=12;
+    crow.style.top=y+"px";
 
-  const fall = setInterval(() => {
-    if (phase === "hover" && hoverTime < 800) {
-      y += 0.2;
-      x += Math.sin(hoverTime / 100) * 1.5;
-      hoverTime += 16;
-    } else {
-      phase = "dive";
-      y += 12;
+    const a=cow.getBoundingClientRect(), b=crow.getBoundingClientRect();
+    if (!(b.right<a.left||b.left>a.right||b.bottom<a.top||b.top>a.bottom)){
+      clearInterval(fall); crow.remove(); endGame();
     }
-
-    crow.style.left = x + "px";
-    crow.style.top = y + "px";
-
-    const crowRect = crow.getBoundingClientRect();
-    const cowRect = cow.getBoundingClientRect();
-    const hit = !(
-      crowRect.right < cowRect.left ||
-      crowRect.left > cowRect.right ||
-      crowRect.bottom < cowRect.top ||
-      crowRect.top > cowRect.bottom
-    );
-
-    if (hit) {
-      clearInterval(fall);
-      crow.remove();
-      endGame();
-    }
-
-    if (y > window.innerHeight + 50) {
-      clearInterval(fall);
-      crow.remove();
-    }
-  }, 16);
+    if (y>innerHeight){ clearInterval(fall); crow.remove(); }
+  },16);
 }
 
-function difficultyUp() {
-  if (score % 50 !== 0) return;
+function difficultyUp(){
+  if(score%50!==0)return;
+  fallSpeed=Math.min(18,fallSpeed+0.5);
+}
 
-  if (score < 200) {
-    fallSpeed = Math.min(15, fallSpeed + 0.5);
-    spawnInterval = Math.max(300, spawnInterval - 100);
-  } else {
-    fallSpeed = Math.min(18, fallSpeed + 1);
-    spawnInterval = Math.max(250, spawnInterval - 150);
-  }
-
+function endGame(){
+  gameOver=true;
   clearInterval(spawner);
-  spawner = setInterval(createItem, spawnInterval);
-}
-
-function endGame() {
-  gameOver = true;
-  clearInterval(spawner);
-  document.querySelectorAll(".item").forEach(el => el.remove());
-  cowImg.src = "cow_stun.png";
-
-  if (score > bestScore) {
-    bestScore = score;
-    localStorage.setItem("bestScore", bestScore);
-    bestScoreEl.textContent = "最高売却額：" + formatYen(bestScore);
+  if(score>bestScore){
+    bestScore=score;
+    localStorage.setItem("bestScore",bestScore);
   }
-
-  overlay.style.display = "flex";
-  finalText.innerHTML = `
-    売却額：${formatYen(score)}<br>
-    最高売却額：${formatYen(bestScore)}
-  `;
+  overlay.style.display="flex";
+  finalText.innerHTML=`売却額：${formatYen(score)}<br>最高売却額：${formatYen(bestScore)}`;
 }
 
-function restart() {
-  location.reload();
-}
+function restart(){ location.reload(); }
 </script>
 </body>
 </html>
