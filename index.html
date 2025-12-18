@@ -171,8 +171,17 @@ function getSpawnInterval(score){
   return 550;
 }
 
+function getMaxItemsOnScreen(score){
+  if (score < 500)  return 2;   // 序盤：落ち着いて覚える
+  if (score < 900)  return 3;   // 中盤：今と同じ体感
+  if (score < 1300) return 4;   // ここから忙しくなる
+  if (score < 1800) return 5;   // 盛り上がりゾーン
+  return 6;                     // 終盤：ワチャっと感
+}
+
+
+
 /* ★追加：画面内制限＋ランダム遅延 */
-const MAX_ITEMS_ON_SCREEN = 3;
 const MIN_DELAY = 300;
 const MAX_DELAY = 900;
 
@@ -183,11 +192,13 @@ function scheduleNextItem(){
   const delay = Math.random() * (MAX_DELAY - MIN_DELAY) + MIN_DELAY;
 
   itemTimer = setTimeout(() => {
-    const itemsOnScreen = document.querySelectorAll('.item').length;
+const itemsOnScreen = document.querySelectorAll('.item').length;
+const maxItems = getMaxItemsOnScreen(score);
 
-    if (itemsOnScreen < MAX_ITEMS_ON_SCREEN) {
-      createItem();
-    }
+if (itemsOnScreen < maxItems) {
+  createItem();
+}
+
 
     scheduleNextItem();
   }, delay);
