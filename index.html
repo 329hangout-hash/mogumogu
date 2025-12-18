@@ -6,146 +6,27 @@
 <title>もぐもぐ牛 - 最終版</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #e6f2e6;
-    font-family: sans-serif;
-    user-select: none;
-    overflow: hidden;
-  }
-
-  #game {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    touch-action: none;
-  }
-
-  #score {
-    font-size: 26px;
-    padding: 24px 12px 0;
-    text-align: center;
-  }
-
-  #bestScore {
-    font-size: 18px;
-    color: #666;
-    padding: 4px 12px 12px;
-    text-align: center;
-  }
-
-  #comboDisplay {
-    position: absolute;
-    top: 110px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-weight: bold;
-    color: #ff4500;
-    z-index: 60;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
+  body { margin: 0; background: #e6f2e6; font-family: sans-serif; user-select: none; overflow: hidden; }
+  #game { position: relative; width: 100vw; height: 100vh; overflow: hidden; touch-action: none; }
+  #score { font-size: 26px; padding: 24px 12px 0; text-align: center; }
+  #bestScore { font-size: 18px; color: #666; padding: 4px 12px 12px; text-align: center; }
+  #comboDisplay { position: absolute; top: 110px; left: 50%; transform: translateX(-50%); font-weight: bold; color: #ff4500; z-index: 60; opacity: 0; transition: opacity 0.3s; }
   #comboDisplay span.number { font-size: 24px; }
   #comboDisplay span.text { font-size: 14px; }
-
-  #levelUpText {
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 48px;
-    font-weight: bold;
-    color: #ffdd00;
-    text-shadow: 2px 2px #fff, 0 0 10px #fff;
-    opacity: 0;
-    z-index: 200;
-    pointer-events: none;
-  }
-
-  #ground {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 100px;
-    z-index: 40;
-    background: url('ground.png') repeat-x;
-    background-size: auto 100px;
-  }
-
-  #cow {
-    position: absolute;
-    bottom: 40px;
-    z-index: 50;
-    left: calc(50% - 30px);
-  }
-
-  #cow img {
-    width: 90px;
-    display: block;
-    transition: transform 0.25s ease;
-  }
-
-  .grow {
-    animation: growPop 0.3s ease;
-  }
-
-  @keyframes growPop {
-    0%   { transform: scaleX(var(--dir,1)) scale(1); }
-    50%  { transform: scaleX(var(--dir,1)) scale(1.25); }
-    100% { transform: scaleX(var(--dir,1)) scale(1); }
-  }
-
-  .flash-bg {
-    animation: flashBg 0.3s ease;
-  }
-
-  @keyframes flashBg {
-    0%   { background-color: rgba(255,255,255,0); }
-    50%  { background-color: rgba(255,255,255,0.7); }
-    100% { background-color: rgba(255,255,255,0); }
-  }
-
+  #levelUpText { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; font-weight: bold; color: #ffdd00; text-shadow: 2px 2px #fff, 0 0 10px #fff; opacity: 0; z-index: 200; pointer-events: none; }
+  #ground { position: absolute; bottom: 0; width: 100%; height: 100px; z-index: 40; background: url('ground.png') repeat-x; background-size: auto 100px; }
+  #cow { position: absolute; bottom: 40px; z-index: 50; left: calc(50% - 30px); }
+  #cow img { width: 90px; display: block; transition: transform 0.25s ease; }
+  .grow { animation: growPop 0.3s ease; }
+  @keyframes growPop { 0% { transform: scaleX(var(--dir,1)) scale(1); } 50% { transform: scaleX(var(--dir,1)) scale(1.25); } 100% { transform: scaleX(var(--dir,1)) scale(1); } }
+  .flash-bg { animation: flashBg 0.3s ease; }
+  @keyframes flashBg { 0% { background-color: rgba(255,255,255,0); } 50% { background-color: rgba(255,255,255,0.7); } 100% { background-color: rgba(255,255,255,0); } }
   .item { position: absolute; z-index: 10; }
   .item img { display: block; }
-
-  .particle {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    background: gold;
-    border-radius: 50%;
-    z-index: 150;
-    pointer-events: none;
-  }
-
-  #overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    font-size: 26px;
-    z-index: 100;
-  }
-
-  #overlay button {
-    margin-top: 20px;
-    font-size: 22px;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-
-  #overlay img {
-    margin-top: 20px;
-    width: 150px;
-  }
+  .particle { position: absolute; width: 12px; height: 12px; background: gold; border-radius: 50%; z-index: 150; pointer-events: none; }
+  #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); color: #fff; display: none; align-items: center; justify-content: center; flex-direction: column; font-size: 26px; z-index: 100; }
+  #overlay button { margin-top: 20px; font-size: 22px; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; }
+  #overlay img { margin-top: 20px; width: 150px; }
 </style>
 </head>
 
@@ -179,7 +60,6 @@ const specialCow = document.getElementById("specialCow");
 const gameArea = document.getElementById("game");
 
 let cowX = window.innerWidth / 2 - 45;
-
 let score = 0;
 let bestScore = 0;
 let gameOver = false;
@@ -187,275 +67,180 @@ let fallSpeed = 4.5;
 let lastDir = 1;
 let currentStage = "kids";
 let itemTimer;
-
 let combo = 0;
+
+const MIN_DELAY = 300;
+const MAX_DELAY = 900;
 
 function formatYen(v){ return "￥" + (v * 1000).toLocaleString(); }
 
-/* 成長判定＋演出 */
 function updateCowStage() {
   const yen = score * 1000;
   let nextStage = "kids";
-
   if (yen >= 1500000) nextStage = "big";
   else if (yen >= 500000) nextStage = "adult";
-
   if (nextStage === currentStage) return;
-
   currentStage = nextStage;
-  cowImg.src =
-    nextStage === "kids"  ? "cowkids.png" :
-    nextStage === "adult" ? "cow_right.png" :
-                            "cowbig.png";
-
+  cowImg.src = nextStage === "kids" ? "cowkids.png" : nextStage === "adult" ? "cow_right.png" : "cowbig.png";
   cowImg.classList.add("grow");
   setTimeout(() => cowImg.classList.remove("grow"), 300);
-
   showLevelUp();
 }
 
-/* レベルアップ演出 */
 function showLevelUp(){
-  // 背景フラッシュ
   document.body.classList.add("flash-bg");
   setTimeout(()=>document.body.classList.remove("flash-bg"),300);
-
-  // LEVEL UP表示
   levelUpText.style.opacity = 1;
   setTimeout(()=>levelUpText.style.opacity=0,1000);
-
-  // 星パーティクル
   for(let i=0;i<15;i++){
-    const p = document.createElement("div");
+    const p=document.createElement("div");
     p.className="particle";
-    const x = cowX + cow.offsetWidth/2;
-    const y = cow.offsetTop;
-    p.style.left = x + "px";
-    p.style.top = y + "px";
+    const x=cowX + cow.offsetWidth/2;
+    const y=cow.offsetTop;
+    p.style.left=x+"px";
+    p.style.top=y+"px";
     gameArea.appendChild(p);
-
-    const dx = (Math.random()-0.5)*200;
-    const dy = -Math.random()*150;
-    let opacity = 1;
-    const interval = setInterval(()=>{
-      p.style.left = x+dx*opacity + "px";
-      p.style.top = y+dy*(1-opacity) + "px";
-      opacity -= 0.03;
-      p.style.opacity = opacity;
-      if(opacity<=0){
-        clearInterval(interval);
-        p.remove();
-      }
+    const dx=(Math.random()-0.5)*200;
+    const dy=-Math.random()*150;
+    let opacity=1;
+    const interval=setInterval(()=>{
+      p.style.left=x+dx*opacity+"px";
+      p.style.top=y+dy*(1-opacity)+"px";
+      opacity-=0.03;
+      p.style.opacity=opacity;
+      if(opacity<=0){ clearInterval(interval); p.remove(); }
     },16);
   }
 }
 
-/* コンボ表示 */
 function updateComboDisplay(){
-  if(combo===0){
-    comboDisplay.style.opacity=0;
-  } else {
+  if(combo===0){ comboDisplay.style.opacity=0; }
+  else {
     comboDisplay.querySelector(".number").textContent = combo;
     comboDisplay.style.opacity=1;
   }
 }
 
-/* 生成間隔関数（残したまま・未使用） */
-function getSpawnInterval(score){
-  if (score < 300)  return 1400;
-  if (score < 600)  return 1100;
-  if (score < 900)  return 900;
-  if (score < 1200) return 700;
-  return 550;
-}
-
 function getMaxItemsOnScreen(score){
-  if (score < 100)   return 2;
-  if (score < 300)   return 3;
-  if (score < 800)   return 4;
-  if (score <= 1200) return 20;
+  if (score < 100) return 2;
+  if (score < 300) return 3;
+  if (score < 800) return 4;
+  if (score <= 1200) return 5;
   return 6;
 }
 
-/* ★追加：画面内制限＋ランダム遅延 */
-const MIN_DELAY = 300;
-const MAX_DELAY = 900;
-
-/* ★変更：ランダム遅延＋個数制限生成 */
-function scheduleNextItem(){
+/* ★重なり防止対応：1個ずつランダム生成 */
+function scheduleNextItem() {
   if (gameOver) return;
-
   const delay = Math.random() * (MAX_DELAY - MIN_DELAY) + MIN_DELAY;
-
   itemTimer = setTimeout(() => {
     const itemsOnScreen = document.querySelectorAll('.item').length;
     const maxItems = getMaxItemsOnScreen(score);
-
-    if (itemsOnScreen < maxItems) {
-      createItem();
+    if(itemsOnScreen < maxItems){
+      createItem(); // 1個だけ生成
     }
-
     scheduleNextItem();
   }, delay);
 }
 
 window.onload = function() {
   const stored = localStorage.getItem("bestScore");
-  if (stored) {
-    bestScore = parseInt(stored);
-    bestScoreEl.textContent = "最高売却額：" + formatYen(bestScore);
-  }
-  scoreEl.textContent = formatYen(score);
-
+  if(stored){ bestScore=parseInt(stored); bestScoreEl.textContent="最高売却額："+formatYen(bestScore); }
+  scoreEl.textContent=formatYen(score);
   scheduleNextItem();
-  setInterval(createCrow, 3000);
+  setInterval(createCrow,3000);
 };
 
-document.addEventListener("click", e => {
-  if (gameOver) return;
-
-  const cowCenter = cowX + cow.offsetWidth / 2;
-  const dir = e.clientX > cowCenter ? 1 : -1;
-  lastDir = dir;
-  cowImg.style.setProperty("--dir", dir);
-  cowImg.style.transform = `scaleX(${dir})`;
-
-  cowX = Math.max(0, Math.min(window.innerWidth - cow.offsetWidth, e.clientX - cow.offsetWidth/2));
-  cow.style.left = cowX + "px";
+document.addEventListener("click", e=>{
+  if(gameOver) return;
+  const cowCenter=cowX+cow.offsetWidth/2;
+  const dir=e.clientX>cowCenter?1:-1;
+  lastDir=dir;
+  cowImg.style.setProperty("--dir",dir);
+  cowImg.style.transform=`scaleX(${dir})`;
+  cowX=Math.max(0,Math.min(window.innerWidth-cow.offsetWidth,e.clientX-cow.offsetWidth/2));
+  cow.style.left=cowX+"px";
 });
 
-function createItem() {
-  if (gameOver) return;
-
-  const item = document.createElement("div");
-  item.className = "item";
-
-  const items = [
+function createItem(){
+  if(gameOver) return;
+  const item=document.createElement("div");
+  item.className="item";
+  const items=[
     { img:"wheat.png", type:"good", size:60 },
     { img:"corn.png", type:"good", size:60 },
-    { img:"onion.png", type:"bad",  size:60 }
+    { img:"onion.png", type:"bad", size:60 }
   ];
-
-  const s = items[Math.floor(Math.random()*items.length)];
-  item.innerHTML = `<img src="${s.img}" style="width:${s.size}px">`;
-  item.dataset.type = s.type;
-  item.style.left = Math.random()*(window.innerWidth-s.size)+"px";
-  item.style.top = "0px";
+  const s=items[Math.floor(Math.random()*items.length)];
+  item.innerHTML=`<img src="${s.img}" style="width:${s.size}px">`;
+  item.dataset.type=s.type;
+  item.style.left=Math.random()*(window.innerWidth-s.size)+"px";
+  item.style.top="0px";
   gameArea.appendChild(item);
 
-  const fall = setInterval(()=>{
-    item.style.top = item.offsetTop + fallSpeed + "px";
-
-    const a = cow.getBoundingClientRect();
-    const b = item.getBoundingClientRect();
-
-    const pad = s.type === "bad" ? 20 : 0;
-
-    const hit =
-      b.right - pad > a.left &&
-      b.left + pad < a.right &&
-      b.bottom - pad > a.top &&
-      b.top + pad < a.bottom;
-
-    if (hit) {
+  const fall=setInterval(()=>{
+    item.style.top=item.offsetTop+fallSpeed+"px";
+    const a=cow.getBoundingClientRect();
+    const b=item.getBoundingClientRect();
+    const pad=s.type==="bad"?20:0;
+    const hit=b.right-pad>a.left && b.left+pad<a.right && b.bottom-pad>a.top && b.top+pad<a.bottom;
+    if(hit){
       clearInterval(fall);
       item.remove();
-
-      if (s.type === "good") {
-        score += s.img === "corn.png" ? 20 : 10;
-        scoreEl.textContent = formatYen(score);
-
-        combo += 1;
+      if(s.type==="good"){
+        score+=s.img==="corn.png"?20:10;
+        scoreEl.textContent=formatYen(score);
+        combo+=1;
         updateComboDisplay();
-
         updateCowStage();
         difficultyUp();
-      } else {
-        endGame();
-      }
+      } else { endGame(); }
     }
-
-    if (item.offsetTop > innerHeight) {
+    if(item.offsetTop>innerHeight){
       clearInterval(fall);
       item.remove();
-
-      if(s.type==="good") {
-        combo=0;
-        updateComboDisplay();
-      }
+      if(s.type==="good"){ combo=0; updateComboDisplay(); }
     }
   },30);
 }
 
 /* カラス */
-function createCrow() {
-  if (gameOver || score < 300) return;
-  if (Math.random() > 0.2) return;
-
-  const crow = document.createElement("div");
-  crow.className = "item";
-  crow.innerHTML = `<img src="crow.png" style="width:50px">`;
+function createCrow(){
+  if(gameOver||score<300) return;
+  if(Math.random()>0.2) return;
+  const crow=document.createElement("div");
+  crow.className="item";
+  crow.innerHTML=`<img src="crow.png" style="width:50px">`;
   gameArea.appendChild(crow);
-
-  let x = Math.random() * (innerWidth - 50);
-  let y = 80;
-  crow.style.left = x + "px";
-  crow.style.top = y + "px";
-
-  let phase = "hover";
-  let hoverCount = 0;
-
-  const fall = setInterval(() => {
-    if (phase === "hover") {
-      hoverCount++;
-      y += Math.sin(hoverCount / 6) * 0.6;
-      if (hoverCount > 80) phase = "dive";
-    } else {
-      y += 12;
-    }
-
-    crow.style.top = y + "px";
-
-    const a = cow.getBoundingClientRect();
-    const b = crow.getBoundingClientRect();
-
-    if (!(b.right<a.left||b.left>a.right||b.bottom<a.top||b.top>a.bottom)) {
-      clearInterval(fall);
-      crow.remove();
-      endGame();
-    }
-
-    if (y > innerHeight) {
-      clearInterval(fall);
-      crow.remove();
-    }
-  }, 16);
+  let x=Math.random()*(innerWidth-50);
+  let y=80;
+  crow.style.left=x+"px";
+  crow.style.top=y+"px";
+  let phase="hover";
+  let hoverCount=0;
+  const fall=setInterval(()=>{
+    if(phase==="hover"){ hoverCount++; y+=Math.sin(hoverCount/6)*0.6; if(hoverCount>80) phase="dive"; }
+    else{ y+=12; }
+    crow.style.top=y+"px";
+    const a=cow.getBoundingClientRect();
+    const b=crow.getBoundingClientRect();
+    if(!(b.right<a.left||b.left>a.right||b.bottom<a.top||b.top>a.bottom)){ clearInterval(fall); crow.remove(); endGame(); }
+    if(y>innerHeight){ clearInterval(fall); crow.remove(); }
+  },16);
 }
 
 function difficultyUp(){
-  if(score%50!==0)return;
+  if(score%50!==0) return;
   fallSpeed=Math.min(18,fallSpeed+0.5);
 }
 
-/* 修正：ブランド牛でゲームオーバーなら特別演出 */
 function endGame(){
   gameOver=true;
   clearTimeout(itemTimer);
-  if(score>bestScore){
-    bestScore=score;
-    localStorage.setItem("bestScore",bestScore);
-  }
-
+  if(score>bestScore){ bestScore=score; localStorage.setItem("bestScore",bestScore); }
   overlay.style.display="flex";
-
-  if(currentStage==="big"){
-    finalText.textContent="Congratulations！";
-    specialCow.src="cow_king.png";
-    specialCow.style.display="block";
-  } else {
-    finalText.innerHTML=`売却額：${formatYen(score)}<br>最高売却額：${formatYen(bestScore)}`;
-    specialCow.style.display="none";
-  }
+  if(currentStage==="big"){ finalText.textContent="Congratulations！"; specialCow.src="cow_king.png"; specialCow.style.display="block"; }
+  else{ finalText.innerHTML=`売却額：${formatYen(score)}<br>最高売却額：${formatYen(bestScore)}`; specialCow.style.display="none"; }
 }
 
 function restart(){ location.reload(); }
